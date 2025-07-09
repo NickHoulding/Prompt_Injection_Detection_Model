@@ -16,7 +16,7 @@ train_df = pd.DataFrame({"text": X_train, "label": y_train})
 test_df = pd.DataFrame({"text": X_test, "label": y_test})
 
 # Save to CSV
-save_path = os.path.join("data", "stratified_split")
+save_path = os.path.join(os.path.dirname(__file__), "data", "stratified_split")
 os.makedirs(save_path, exist_ok=True)
 train_df.to_csv(os.path.join(save_path, "train_split.csv"), index=False)
 test_df.to_csv(os.path.join(save_path, "test_split.csv"), index=False)
