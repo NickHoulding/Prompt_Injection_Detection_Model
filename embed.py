@@ -23,6 +23,7 @@ def main():
     X_test = ENCODER.encode(test_df['text'].tolist()).T
     Y_test = np.array(test_df['label']).reshape(1, -1)
 
+    os.makedirs(SAVE_PATH, exist_ok=True)
     np.save(os.path.join(SAVE_PATH, 'X_train.npy'), X_train)
     np.save(os.path.join(SAVE_PATH, 'Y_train.npy'), Y_train)
     np.save(os.path.join(SAVE_PATH, 'X_test.npy'), X_test)
