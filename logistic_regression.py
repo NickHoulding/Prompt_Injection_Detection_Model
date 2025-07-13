@@ -250,8 +250,8 @@ def model(
 
     # Print train/test Errors
     if print_cost:
-        print("train accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_train - Y_train)) * 100))
-        print("test accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_test - Y_test)) * 100))
+        print("train accuracy: {} %".format(np.mean(Y_prediction_train == Y_train) * 100))
+        print("test accuracy: {} %".format(np.mean(Y_prediction_test == Y_test) * 100))
 
     
     d = {"costs": costs,

@@ -15,8 +15,8 @@ def main():
         Y_train=Y_train, 
         X_test=X_test, 
         Y_test=Y_test, 
-        num_iterations=3000, 
-        learning_rate=0.5, 
+        num_iterations=2500, 
+        learning_rate=23.75, 
         print_cost=True
     )
 
