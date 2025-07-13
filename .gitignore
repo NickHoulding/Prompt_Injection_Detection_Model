@@ -1,5 +1,6 @@
 # Dirs
 __pycache__
+data/embedded
 
 # Files
 *.pyc

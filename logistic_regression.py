@@ -1,6 +1,6 @@
-from typing import Union
 import numpy as np
 import copy
+from typing import Union
 
 def initialize_with_zeros(dim: int) -> tuple:
     """
