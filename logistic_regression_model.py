@@ -1,16 +1,15 @@
 import pickle as pkl
 import numpy as np
-import copy
 from typing import Union
 
 class LogisticRegressionModel:
     def __init__(self, learning_rate=0.5, num_iterations=2000):
-        self.weights = None
-        self.bias = None
         self.learning_rate = learning_rate
         self.num_iterations = num_iterations
-        self.costs = []
+        self.weights = None
+        self.bias = None
         self.is_trained = False
+        self.costs = []
     
     def _initialize_with_zeros(self, dim: int) -> None:
         """
@@ -48,7 +47,7 @@ class LogisticRegressionModel:
         - cost (float): Negative log-likelihood cost for logistic regression.
         """
         if self.weights is None or self.bias is None:
-            raise ValueError("Weights and bias must be initialized before propagation.")
+            raise ValueError("Weights and bias are not initialized.")
         
         m = X.shape[1]
         
@@ -63,12 +62,16 @@ class LogisticRegressionModel:
         db = 1/m * np.sum(dZ)
 
         cost = np.squeeze(np.array(cost))
-       
         grads = {"dw": dw, "db": db}
         
         return grads, cost
     
-    def _optimize(self, X: np.ndarray, Y: np.ndarray, print_cost=False) -> None:
+    def _optimize(
+            self, 
+            X: np.ndarray, 
+            Y: np.ndarray, 
+            print_cost=False
+        ) -> None:
         """
         Optimizes weights and bias by running gradient descent algorithm.
         
@@ -80,26 +83,26 @@ class LogisticRegressionModel:
         self.costs = []
         
         for i in range(self.num_iterations):
-            # Cost and gradient calculation
             grads, cost = self._propagate(X, Y)
             
-            # Retrieve derivatives from grads
             dw = grads["dw"]
             db = grads["db"]
             
-            # Update rule
             self.weights = self.weights - (self.learning_rate * dw)
             self.bias = self.bias - (self.learning_rate * db)
             
-            # Record the costs
             if i % 100 == 0:
                 self.costs.append(cost)
             
-                # Print the cost every 100 training iterations
                 if print_cost:
                     print("Cost after iteration %i: %f" % (i, cost))
     
-    def fit(self, X_train: np.ndarray, Y_train: np.ndarray, print_cost=False) -> None:
+    def fit(
+            self, 
+            X_train: np.ndarray, 
+            Y_train: np.ndarray, 
+            print_cost=False
+        ) -> None:
         """
         Train the logistic regression model.
 
@@ -110,10 +113,7 @@ class LogisticRegressionModel:
         """
         # Initialize parameters with zeros
         self._initialize_with_zeros(dim=X_train.shape[0])
-        
-        # Gradient descent optimization
         self._optimize(X_train, Y_train, print_cost)
-        
         self.is_trained = True
         
         if print_cost:
@@ -138,11 +138,9 @@ class LogisticRegressionModel:
         Y_prediction = np.zeros((1, m))
         weights = self.weights.reshape(X.shape[0], 1)
         
-        # Compute vector A predicting the probabilities
         A = self._sigmoid(np.dot(weights.T, X) + self.bias)
         
         for i in range(A.shape[1]):
-            # Convert probabilities A[0,i] to actual predictions
             if A[0, i] > 0.5:
                 Y_prediction[0, i] = 1
             else:
@@ -164,6 +162,7 @@ class LogisticRegressionModel:
             raise ValueError("Model must be trained before making predictions. Call fit() first.")
         
         weights = self.weights.reshape(X.shape[0], 1)
+
         return self._sigmoid(np.dot(weights.T, X) + self.bias)
     
     def evaluate(self, X_test: np.ndarray, Y_test: np.ndarray) -> dict:

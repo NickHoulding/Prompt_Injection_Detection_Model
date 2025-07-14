@@ -19,6 +19,7 @@ nltk.download('wordnet')
 def normalize_text(text):
     text = text.lower()
     text = unicodedata.normalize('NFKC', text)
+    
     text = re.sub(r'[^a-z0-9\s.,;:!?-]', '', text)
     text = ' '.join(text.split())
 

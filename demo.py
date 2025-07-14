@@ -1,5 +1,3 @@
-import numpy as np
-import sys
 import os
 from sentence_transformers import SentenceTransformer
 from logistic_regression_model import load_model
@@ -39,6 +37,8 @@ def main():
 
         if lr_model.costs:
             print(f"Final training cost: {lr_model.costs[-1]:.6f}")
+
+        print()
         
     except Exception as e:
         print(f"[✗] Error loading model: {e}")
