@@ -1,7 +1,8 @@
 # Dirs
 __pycache__
 data/embedded
-
+venv
+    
 # Files
 *.pyc
 *.pkl
