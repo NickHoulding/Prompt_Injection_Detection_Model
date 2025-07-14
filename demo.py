@@ -1,3 +1,4 @@
+import torch
 import os
 from sentence_transformers import SentenceTransformer
 from logistic_regression_model import load_model
@@ -6,8 +7,11 @@ def main():
     print("=== Prompt Injection Detection Demo ===\n")
     
     print("Loading embedding model...")
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
     try:
         embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+        embedding_model.to(device)
         print("[✓] Embedding model loaded successfully!\n")
     
     except Exception as e:
