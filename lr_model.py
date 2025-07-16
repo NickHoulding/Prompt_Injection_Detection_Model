@@ -217,7 +217,7 @@ class LogisticRegressionModel:
         """
         return self.costs
     
-    def save_model(self, file_path: str) -> None:
+    def save_model(self, file_path: str):
         """
         Save the model to a file.
         

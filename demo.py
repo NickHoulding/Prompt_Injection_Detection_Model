@@ -18,7 +18,7 @@ def main():
         print(f"[✗] Error loading embedding model: {e}")
         return
     
-    model_path = os.path.join(os.path.join(os.path.dirname(__file__), 'logistic_regression_model.pkl'))
+    model_path = os.path.join(os.path.join(os.path.dirname(__file__), 'lr_model.pkl'))
     if not os.path.exists(model_path):
         print(f"[✗] Model file not found: {model_path}")
         return

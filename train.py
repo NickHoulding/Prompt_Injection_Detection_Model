@@ -12,7 +12,7 @@ def main():
     Y_test = np.load(os.path.join(LOAD_PATH, 'Y_test.npy'))
 
     model = LogisticRegressionModel(
-        name="test_model",
+        name="lr_model",
         learning_rate=23.75,
         num_iterations=2500
     )
