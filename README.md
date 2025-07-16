@@ -27,17 +27,17 @@ The project uses the [prompt-injection-safety](https://huggingface.co/datasets/j
 
 ```
 ├── data/
-│   ├── stratified_split/     # Train/test CSV files
-│   ├── normalized_split/     # Preprocessed text data
-│   └── embedded/             # NumPy arrays with embeddings
-├── stratified_split_to_csv.py    # Step 1: Data loading and splitting
-├── normalize_text.py             # Step 2: Text preprocessing
-├── embed_text.py                 # Step 3: Feature extraction
-├── train.py                      # Step 4: Model training
-├── logistic_regression_model.py  # Custom LR implementation
-├── demo.py                       # Interactive testing interface
-├── requirements.txt              # Dependencies
-└── logistic_regression_model.pkl # Trained model file (generated)
+│   ├── stratified_split/        # Train/test CSV files
+│   ├── normalized_split/        # Preprocessed text data
+│   └── embedded/                # NumPy arrays with embeddings
+├── stratified_split_to_csv.py   # Step 1: Data loading and splitting
+├── normalize_text.py            # Step 2: Text preprocessing
+├── embed_text.py                # Step 3: Feature extraction
+├── train.py                     # Step 4: Model training
+├── lr_model.py                  # Custom LR implementation
+├── demo.py                      # Interactive testing interface
+├── requirements.txt             # Dependencies
+└── lr_model.pkl                 # Trained model file (generated)
 ```
 
 ## Setup and Installation
@@ -100,7 +100,7 @@ python train.py
 - Trains the model on the embedded training features
     - Hyperparameters: learning_rate=23.75, num_iterations=2500
 - Evaluates model performance on the test set
-- Saves trained model as `logistic_regression_model.pkl`
+- Saves trained model as `lr_model.pkl`
 
 ### Step 5: Interactive Testing
 ```bash

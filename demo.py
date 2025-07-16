@@ -1,7 +1,7 @@
 import torch
 import os
 from sentence_transformers import SentenceTransformer
-from logistic_regression_model import load_model
+from lr_model import load_model
 
 def main():
     print("=== Prompt Injection Detection Demo ===\n")
