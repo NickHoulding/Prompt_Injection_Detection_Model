@@ -33,7 +33,7 @@ def main():
     )
 
     print(f"Test accuracy: {evaluation['accuracy']:.2f}%")
-    model.save_model(os.path.join(os.path.dirname(__file__)))
+    model.save_model(os.path.join(os.path.dirname(__file__), 'models'))
 
 if __name__ == "__main__":
     main()

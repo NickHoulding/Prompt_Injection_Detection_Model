@@ -224,6 +224,7 @@ class LogisticRegressionModel:
         """
         final_path = os.path.join(file_path, self.name + '.pkl')
 
+        os.makedirs(file_path, exist_ok=True)
         with open(final_path, 'wb') as f:
             pkl.dump(self, f)
 
