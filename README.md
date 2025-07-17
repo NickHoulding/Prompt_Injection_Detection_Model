@@ -30,14 +30,14 @@ The project uses the [prompt-injection-safety](https://huggingface.co/datasets/j
 │   ├── stratified_split/        # Train/test CSV files
 │   ├── normalized_split/        # Preprocessed text data
 │   └── embedded/                # NumPy arrays with embeddings
+├── models/                      # Directory for model files
 ├── stratified_split_to_csv.py   # Step 1: Data loading and splitting
 ├── normalize_text.py            # Step 2: Text preprocessing
 ├── embed_text.py                # Step 3: Feature extraction
 ├── train.py                     # Step 4: Model training
-├── lr_model.py                  # Custom LR implementation
-├── demo.py                      # Interactive testing interface
-├── requirements.txt             # Dependencies
-└── lr_model.pkl                 # Trained model file (generated)
+├── demo.py                      # Step 5: Interactive testing interface
+├── lr_model.py                  # Custom LR model implementation
+└── requirements.txt             # Dependencies
 ```
 
 ## Setup and Installation
@@ -51,7 +51,7 @@ The project uses the [prompt-injection-safety](https://huggingface.co/datasets/j
 
 2. **Create a virtual environment (recommended):**
    ```bash
-   python -m venv venv
+   python3 -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
