@@ -1,23 +1,12 @@
-import torch
+import tensorflow as tf
+import numpy as np
+import ollama
 import os
-from sentence_transformers import SentenceTransformer
 from lr_model import load_model
 
 def main():
     print("=== Prompt Injection Detection Demo ===\n")
-    
-    print("Loading embedding model...")
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-    try:
-        embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
-        embedding_model.to(device)
-        print("[✓] Embedding model loaded successfully!\n")
-    
-    except Exception as e:
-        print(f"[✗] Error loading embedding model: {e}")
-        return
-    
     model_path = os.path.join(os.path.join(os.path.dirname(__file__), 'models', 'lr_model.pkl'))
     if not os.path.exists(model_path):
         print(f"[✗] Model file not found: {model_path}")
@@ -62,9 +51,12 @@ def main():
             if not user_input:
                 print("[✗] Please enter a non-empty prompt.\n")
                 continue
-            
-            embedding = embedding_model.encode([user_input])
-            X_input = embedding.T
+
+            response = ollama.embed(
+                model="nomic-embed-text",
+                input=user_input,
+            )
+            X_input = np.array(response['embeddings']).T
             
             prediction = lr_model.predict(X_input)
             probability = lr_model.predict_proba(X_input)

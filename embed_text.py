@@ -1,14 +1,11 @@
 import pandas as pd
 import numpy as np
-import torch
+import ollama
 import os
-from sentence_transformers import SentenceTransformer
 
 SAVE_PATH = os.path.join(os.path.dirname(__file__), 'data', 'embedded')
 LOAD_PATH = os.path.join(os.path.dirname(__file__), 'data', 'normalized_split')
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-ENCODER = SentenceTransformer('all-MiniLM-L6-v2')
-ENCODER.to(DEVICE)
+ENCODER = 'nomic-embed-text'
 
 def main():
     train_df = pd.read_csv(os.path.join(LOAD_PATH, 'train_split_normalized.csv'))
@@ -18,9 +15,16 @@ def main():
     test_df = test_df.dropna(subset=['text'])
     print(f"After removing NaN values - Train: {len(train_df)} samples, Test: {len(test_df)} samples")
 
-    X_train = ENCODER.encode(train_df['text'].tolist()).T
+    X_train = np.array(ollama.embed(
+        model=ENCODER, 
+        input=train_df['text'].tolist()
+    )['embeddings']).T
     Y_train = np.array(train_df['label']).reshape(1, -1)
-    X_test = ENCODER.encode(test_df['text'].tolist()).T
+    
+    X_test = np.array(ollama.embed(
+        model=ENCODER, 
+        input=test_df['text'].tolist()
+    )['embeddings']).T
     Y_test = np.array(test_df['label']).reshape(1, -1)
 
     os.makedirs(SAVE_PATH, exist_ok=True)
