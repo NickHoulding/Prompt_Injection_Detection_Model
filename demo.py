@@ -1,42 +1,46 @@
 import tensorflow as tf
 import numpy as np
+import argparse
 import ollama
 import os
 from lr_model import load_model
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="Prompt Injection Detection: Interactive Demo")
+    parser.add_argument('--model', type=str, default='nn', help='Select either "nn" for neural network or "lr" for logistic regression model.')
+    return parser.parse_args()
+
 def main():
     print("=== Prompt Injection Detection Demo ===\n")
 
-    model_path = os.path.join(os.path.join(os.path.dirname(__file__), 'models', 'lr_model.pkl'))
-    if not os.path.exists(model_path):
-        print(f"[✗] Model file not found: {model_path}")
+    args = parse_args()
+    model_type = args.model
+
+    if model_type not in ['nn', 'lr']:
+        print("[✗] Invalid model type specified. Use 'nn' for neural network or 'lr' for logistic regression.")
         return
-    
+
     try:
-        lr_model = load_model(model_path)
-        print("[✓] Logistic regression model loaded successfully!\n")
-        
-        if not lr_model.is_trained:
-            print("[✗] The loaded model hasn't been trained yet!")
-            return
-        
-        print("=== Model Information ===")
-        print(f"Learning rate: {lr_model.learning_rate}")
-        print(f"Number of iterations: {lr_model.num_iterations}")
-        print(f"Is trained: {lr_model.is_trained}")
-        print(f"Weight shape: {lr_model.weights.shape if lr_model.weights is not None else 'None'}")
-        print(f"Bias: {lr_model.bias}")
-        print(f"Number of training costs recorded: {len(lr_model.costs)}")
+        if model_type == 'lr':
+            print("[-] Loading logistic regression model...")
+            model_path = os.path.join(os.path.dirname(__file__), 'models', 'lr_model.pkl')
+            
+            if not os.path.exists(model_path):
+                print(f"[✗] Model file not found: {model_path}")
+                return
 
-        if lr_model.costs:
-            print(f"Final training cost: {lr_model.costs[-1]:.6f}")
+            model = load_model(model_path)
 
-        print()
-        
+        elif model_type == 'nn':
+            print("[-] Loading neural network model...")
+            model_path = os.path.join(os.path.dirname(__file__), 'models', 'nn_model.keras')
+            model = tf.keras.models.load_model(model_path)
+
     except Exception as e:
         print(f"[✗] Error loading model: {e}")
         return
-    
+
+    print("[✓] Model loaded successfully!\n")    
     print("Model is ready! You can now test prompts for injection detection.")
     print("Type 'quit', 'exit', or 'q' to stop.\n")
     
@@ -56,18 +60,28 @@ def main():
                 model="nomic-embed-text",
                 input=user_input,
             )
-            X_input = np.array(response['embeddings']).T
-            
-            prediction = lr_model.predict(X_input)
-            probability = lr_model.predict_proba(X_input)
-            
-            is_malicious = prediction[0, 0] == 1
-            confidence = probability[0, 0] if is_malicious else 1 - probability[0, 0]
+
+            if model_type == 'nn':
+                X_input = np.array(response['embeddings']).reshape(1, -1)
+                prediction = model.predict(X_input, verbose=0)
+                probability = prediction[0, 0]
+
+                is_malicious = probability > 0.5
+                confidence = probability if is_malicious else 1 - probability
+                raw_prob_malicious = probability
+            elif model_type == 'lr':
+                X_input = np.array(response['embeddings']).reshape(-1, 1)
+                prediction = model.predict(X_input)
+                probability = model.predict_proba(X_input)
+
+                is_malicious = prediction[0, 0] == 1
+                raw_prob_malicious = probability[0, 0]
+                confidence = raw_prob_malicious if is_malicious else 1 - raw_prob_malicious
             
             print(f"\n--- Results ---")
             print(f"Classification: {'[!] MALICIOUS' if is_malicious else '[✓] LEGITIMATE'}")
             print(f"Confidence: {confidence:.2%}")
-            print(f"Raw probability (malicious): {probability[0, 0]:.4f}")
+            print(f"Raw probability (malicious): {raw_prob_malicious:.4f}")
             print("-" * 40 + "\n")
             
         except KeyboardInterrupt:
