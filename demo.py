@@ -38,10 +38,19 @@ def main():
 
             model = load_model(model_path)
 
+            print("=== Model Information ===")
+            print(f"Learning rate: {model.learning_rate}")
+            print(f"Number of iterations: {model.num_iterations}")
+            print(f"Is trained: {model.is_trained}")
+            print(f"Weight shape: {model.weights.shape if model.weights is not None else 'None'}")
+            print(f"Bias: {model.bias}")
+            print(f"Number of training costs recorded: {len(model.costs)}")
+
         elif model_type == 'nn':
             print("[-] Loading neural network model...")
             model_path = os.path.join(os.path.dirname(__file__), 'models', 'nn_model.keras')
             model = tf.keras.models.load_model(model_path)
+            model.summary()
 
     except Exception as e:
         print(f"[✗] Error loading model: {e}")
