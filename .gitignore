@@ -1,7 +1,7 @@
 # Dirs
 __pycache__
 .venv/
-data/
+embeddings/
 
 # Files
 *.pyc

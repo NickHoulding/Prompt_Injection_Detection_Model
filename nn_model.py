@@ -5,7 +5,7 @@ import time
 import os
 from tensorflow.keras import regularizers
 
-LOAD_PATH = os.path.join(os.path.dirname(__file__), 'data', 'embedded')
+LOAD_PATH = os.path.join(os.path.dirname(__file__), 'embeddings')
 
 X_train = np.load(os.path.join(LOAD_PATH, 'X_train.npy'))
 Y_train = np.load(os.path.join(LOAD_PATH, 'Y_train.npy'))

@@ -3,7 +3,7 @@ import time
 import os
 from lr_model import LogisticRegressionModel
 
-LOAD_PATH = os.path.join(os.path.dirname(__file__), 'data', 'embedded')
+LOAD_PATH = os.path.join(os.path.dirname(__file__), 'embeddings')
 
 def main():
     X_train = np.load(os.path.join(LOAD_PATH, 'X_train.npy'))
