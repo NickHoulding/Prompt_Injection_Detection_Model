@@ -9,6 +9,7 @@ This project contains a complete end-to-end implementation of a prompt injection
 - **Custom Logistic Regression**: Implemented from scratch with gradient descent optimization
 - **Neural Network**: Deep learning model built with TensorFlow/Keras
 - **Unified Demo Interface**: Single interactive demo supporting both models via command-line arguments
+- **Streamlined Data Pipeline**: Single script handling complete data workflow from download to embeddings
 - **Ollama Embeddings**: Using `nomic-embed-text` model for text embeddings
 - **Stratified Data Splitting**: Ensuring balanced 80/20 train/test split
 - **Text Normalization**: Comprehensive preprocessing pipeline
@@ -35,22 +36,21 @@ The project uses the [prompt-injection-safety](https://huggingface.co/datasets/j
 ## Project Structure
 
 ```
-├── data/
-│   ├── stratified_split/        # Train/test CSV files
-│   ├── normalized_split/        # Preprocessed text data
-│   └── embedded/                # NumPy arrays with embeddings
-├── models/                      # Directory for model files
-│   ├── lr_model.pkl             # Trained logistic regression model 
-│   └── nn_model.keras           # Trained neural network model
-├── stratified_split_to_csv.py   # Step 1: Data loading and splitting
-├── normalize_text.py            # Step 2: Text preprocessing
-├── embed_text.py                # Step 3: Feature extraction
-├── train.py                     # Step 4: Logistic regression training
-├── nn_model.py                  # Neural network training script
-├── demo.py                      # Unified interactive demo interface
-├── lr_model.py                  # Custom LR model implementation
-├── pyproject.toml               # UV project configuration
-└── uv.lock                      # Dependency lock file
+├── embeddings/                 # Processed embeddings ready for training
+│   ├── X_train.npy             # Training feature embeddings
+│   ├── X_test.npy              # Test feature embeddings  
+│   ├── Y_train.npy             # Training labels
+│   └── Y_test.npy              # Test labels
+├── models/                     # Directory for trained model files
+│   ├── lr_model.pkl            # Trained logistic regression model 
+│   └── nn_model.keras          # Trained neural network model
+├── data_pipeline.py            # Unified data processing pipeline
+├── demo.py                     # Unified interactive demo interface
+├── lr_model.py                 # Custom LR model implementation
+├── lr_train.py                 # Logistic regression training script
+├── nn_model.py                 # Neural network training script
+├── pyproject.toml              # UV project configuration
+└── uv.lock                     # Dependency lock file
 ```
 
 ## Setup and Installation
@@ -75,57 +75,43 @@ This project requires Python >=3.11 and uses uv for modern Python dependency man
 
 ## Reproducing Results
 
-The project consists of sequential scripts that must be run in order for proper setup:
+The project uses a streamlined data processing pipeline for easy setup and execution:
 
-### Step 1: Data Preparation
+### Step 1: Data Processing Pipeline
 ```bash
-uv run python stratified_split_to_csv.py
+uv run data_pipeline.py
 ```
 - Downloads the prompt injection dataset from Hugging Face
 - Converts multi-class labels to binary (legitimate vs malicious)
 - Performs stratified train/test split (80/20)
-- Saves CSV files to `data/stratified_split/`
-
-### Step 2: Text Normalization
-```bash
-uv run python normalize_text.py
-```
-- Applies comprehensive text preprocessing:
-  - Lowercasing and Unicode normalization
-  - Special character removal
-  - Tokenization and lemmatization
-- Saves normalized data to `data/normalized_split/`
-
-### Step 3: Feature Extraction
-```bash
-uv run python embed_text.py
-```
+- Applies comprehensive text preprocessing (normalization, lemmatization)
 - Generates embeddings using Ollama's `nomic-embed-text` model
-- Converts text to numerical embedding features
-- Saves NumPy arrays to `data/embedded/`
-- Requires Ollama to be installed and running
+- Saves processed embeddings as NumPy arrays to `embeddings/`
+- Requires Ollama to be installed and running with the embedding model
 
-### Step 4: Model Training
+### Step 2: Model Training
 
 #### Logistic Regression Model
 ```bash
-uv run python train.py
+uv run lr_train.py
 ```
+- Loads processed embeddings from `embeddings/` directory
 - Instantiates a new custom logistic regression model object
 - Trains the model on the embedded training features
     - Hyperparameters: learning_rate=23.75, num_iterations=2500
 - Evaluates model performance on the test set
-- Saves trained model as `lr_model.pkl`
+- Saves trained model as `models/lr_model.pkl`
 
 #### Neural Network Model
 ```bash
-uv run python nn_model.py
+uv run nn_model.py
 ```
+- Loads processed embeddings from `embeddings/` directory
 - Creates and trains a deep neural network using TensorFlow
 - Applies regularization techniques (L2, dropout, batch normalization)
-- Saves trained model as `nn_model.keras`
+- Saves trained model as `models/nn_model.keras`
 
-### Step 5: Interactive Testing
+### Step 3: Interactive Testing
 ```bash
 # Test with neural network model (default)
 uv run demo.py
@@ -143,10 +129,10 @@ uv run demo.py --model nn
 
 ## Expected Results
 
-After training, you should see competitive test accuracy for prompt injection detection:
+After training, you should see test accuracy for prompt injection detection:
 
-- **Logistic Regression Model**: ~94.75% test accuracy
-- **Neural Network Model**: ~95.05% test accuracy
+- **Logistic Regression Model**: ~94% test accuracy
+- **Neural Network Model**: ~95% test accuracy
 
 Both models provide:
 - Binary classification (legitimate vs malicious)
@@ -160,10 +146,11 @@ Both models provide:
 - **Deep Neural Network**: TensorFlow/Keras implementation with advanced regularization
 - **Unified Interface**: Single demo script supporting both models via command-line arguments
 
-### Advanced Text Processing
+### Streamlined Data Processing
+- **Unified Pipeline**: Single script handles complete data workflow from download to embeddings
 - **Modern Embeddings**: Ollama's `nomic-embed-text` model for high-quality representations
 - **Robust Preprocessing**: Unicode normalization, lemmatization, and special character handling
-- **Efficient Pipeline**: Optimized data flow from raw text to model predictions
+- **Efficient Storage**: Direct embedding generation and storage for immediate model training
 
 ### Production-Ready Demo
 - **Model Selection**: Choose between logistic regression (`--model lr`) or neural network (`--model nn`)
@@ -173,6 +160,7 @@ Both models provide:
 
 ## Technical Highlights
 
+- **Unified Data Pipeline**: Complete end-to-end processing from raw text to embeddings in a single script
 - **Dual Architecture Approach**: Compare custom implementation vs. deep learning performance
 - **Mathematical Implementation**: Custom gradient descent with vectorized operations
 - **Modern Dependency Management**: UV for fast, reliable Python package management
@@ -182,16 +170,16 @@ Both models provide:
 
 ## Dependencies
 
-Key packages used in this project:
-- `ollama`: Modern text embedding generation
+Key packages in this project and how they're used:
+- `ollama`: Text embedding generation
 - `tensorflow`: Deep learning framework for neural network implementation
 - `pandas`: Data manipulation and CSV handling
-- `numpy`: Numerical computations and array operations
-- `nltk`: Natural language preprocessing
+- `numpy`: Vectorized computations and array operations
+- `nltk`: Natural language preprocessing (normalization)
 - `datasets`: Hugging Face dataset integration
-- `scikit-learn`: Additional ML utilities
+- `scikit-learn`: Dataset stratification
 
-Project management:
+Project management tools:
 - **UV**: Modern Python package manager (requires Python >=3.11)
 - **pyproject.toml**: Modern Python project configuration
 
