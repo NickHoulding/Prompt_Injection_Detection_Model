@@ -6,8 +6,15 @@ import os
 from lr_model import load_model
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Prompt Injection Detection: Interactive Demo")
-    parser.add_argument('--model', type=str, default='nn', help='Select either "nn" for neural network or "lr" for logistic regression model.')
+    parser = argparse.ArgumentParser(
+        description="Prompt Injection Detection: Interactive Demo"
+    )
+    parser.add_argument(
+        '--model', 
+        type=str, 
+        default='nn', 
+        help='Select either "nn" for neural network or "lr" for logistic regression model.'
+    )
     return parser.parse_args()
 
 def main():
