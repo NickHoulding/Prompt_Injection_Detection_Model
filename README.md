@@ -46,9 +46,8 @@ The project uses the [prompt-injection-safety](https://huggingface.co/datasets/j
 │   └── nn_model.keras          # Trained neural network model
 ├── data_pipeline.py            # Unified data processing pipeline
 ├── demo.py                     # Unified interactive demo interface
-├── lr_model.py                 # Custom LR model implementation
-├── lr_train.py                 # Logistic regression training script
-├── nn_model.py                 # Neural network training script
+├── lr_train.py                 # Logistic regression model and training script
+├── nn_train.py                 # Neural network model and training script
 ├── pyproject.toml              # UV project configuration
 └── uv.lock                     # Dependency lock file
 ```
@@ -93,23 +92,37 @@ uv run data_pipeline.py
 
 #### Logistic Regression Model
 ```bash
+# Train with default settings and save the model
+uv run lr_train.py --save_model
+
+# Train without saving the model (for testing)
 uv run lr_train.py
+
+# Train and save with a custom model name
+uv run lr_train.py --save_model --model_name my_custom_lr_model
 ```
 - Loads processed embeddings from `embeddings/` directory
 - Instantiates a new custom logistic regression model object
 - Trains the model on the embedded training features
     - Hyperparameters: learning_rate=23.75, num_iterations=2500
 - Evaluates model performance on the test set
-- Saves trained model as `models/lr_model.pkl`
+- Optionally saves trained model as `models/{model_name}.pkl` when `--save_model` flag is used
 
 #### Neural Network Model
 ```bash
-uv run nn_model.py
+# Train with default settings and save the model
+uv run nn_train.py --save_model
+
+# Train without saving the model (for testing)
+uv run nn_train.py
+
+# Train and save with a custom model name
+uv run nn_train.py --save_model --model_name my_custom_nn_model
 ```
 - Loads processed embeddings from `embeddings/` directory
 - Creates and trains a deep neural network using TensorFlow
 - Applies regularization techniques (L2, dropout, batch normalization)
-- Saves trained model as `models/nn_model.keras`
+- Optionally saves trained model as `models/{model_name}.keras` when `--save_model` flag is used
 
 ### Step 3: Interactive Testing
 ```bash
@@ -127,6 +140,48 @@ uv run demo.py --model nn
 - Shows classification results with confidence scores
 - Supports both model types through command-line arguments
 
+## Command-Line Arguments
+
+### Training Scripts
+
+Both training scripts (`lr_train.py` and `nn_train.py`) support the following arguments:
+
+- `--save_model`: Flag to save the trained model to disk (optional)
+- `--model_name`: Custom name for the saved model file (optional, defaults to timestamped name. This *MUST* be formatted as a valid filename if specified.)
+
+**Examples:**
+```bash
+# Train and save with default name
+uv run lr_train.py --save_model
+uv run nn_train.py --save_model
+
+# Train and save with custom name
+uv run lr_train.py --save_model --model_name custom_lr_model
+uv run nn_train.py --save_model --model_name custom_nn_model
+
+# Train without saving (useful for experimentation)
+uv run lr_train.py
+uv run nn_train.py
+```
+
+### Demo Script
+
+The demo script (`demo.py`) supports:
+
+- `--model`: Choose between 'lr' (logistic regression) or 'nn' (neural network), defaults to 'nn'
+
+**Examples:**
+```bash
+# Use neural network model (default)
+uv run demo.py
+
+# Use logistic regression model
+uv run demo.py --model lr
+
+# Use neural network model (explicit)
+uv run demo.py --model nn
+```
+
 ## Expected Results
 
 After training, you should see test accuracy for prompt injection detection:
@@ -142,9 +197,10 @@ Both models provide:
 ## Key Features
 
 ### Multiple Model Architectures
-- **Custom Logistic Regression**: Built from scratch without sklearn
+- **Custom Logistic Regression**: Built from scratch without sklearn, includes complete model class definition and training script in a single file
 - **Deep Neural Network**: TensorFlow/Keras implementation with advanced regularization
 - **Unified Interface**: Single demo script supporting both models via command-line arguments
+- **Flexible Training**: Command-line arguments for model saving and custom naming
 
 ### Streamlined Data Processing
 - **Unified Pipeline**: Single script handles complete data workflow from download to embeddings
@@ -162,6 +218,8 @@ Both models provide:
 
 - **Unified Data Pipeline**: Complete end-to-end processing from raw text to embeddings in a single script
 - **Dual Architecture Approach**: Compare custom implementation vs. deep learning performance
+- **Consolidated Model Implementation**: Logistic regression model class and training script combined for streamlined development
+- **Flexible Training Options**: Command-line arguments for model saving, custom naming, and training configuration
 - **Mathematical Implementation**: Custom gradient descent with vectorized operations
 - **Modern Dependency Management**: UV for fast, reliable Python package management
 - **Memory Efficiency**: Vectorized NumPy operations for large embedding matrices
