@@ -3,7 +3,7 @@ import numpy as np
 import argparse
 import ollama
 import os
-from lr_model import load_model
+from lr_train import load_model
 
 def parse_args():
     parser = argparse.ArgumentParser(
