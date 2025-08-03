@@ -5,7 +5,13 @@ import ollama
 import os
 from lr_train import load_model
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
+    """
+    Parses command line arguments.
+
+    Returns:
+        argparse.Namespace: Parsed command line arguments.
+    """
     parser = argparse.ArgumentParser(
         description="Prompt Injection Detection: Interactive Demo"
     )
@@ -17,7 +23,10 @@ def parse_args():
     )
     return parser.parse_args()
 
-def main():
+def main() -> None:
+    """
+    Main function to run the prompt injection detection demo.
+    """
     print("=== Prompt Injection Detection Demo ===\n")
 
     args = parse_args()
@@ -106,5 +115,6 @@ def main():
         except Exception as e:
             print(f"Error processing input: {e}\n")
 
+# Entry point
 if __name__ == "__main__":
     main()

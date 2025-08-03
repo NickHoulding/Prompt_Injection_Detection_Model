@@ -25,6 +25,25 @@ from typing import List, Tuple
 class DataPipeline:
     """
     Unified data processing pipeline for prompt injection detection.
+
+    Attributes:
+        save_path (str): Path to save the final numpy arrays.
+        encoder (str): Ollama model to use for text embedding.
+        test_size (float): Proportion of dataset for testing.
+        random_state (int): Random seed for reproducibility.
+
+    Methods:
+        _download_nltk_data(): Downloads required NLTK datasets.
+        download_dataset(dataset_name): Downloads dataset from HuggingFace.
+        stratified_split(X, y): Performs stratified train/test split.
+        normalize_text(text): Normalizes a single text sample.
+        normalize_dataset(X_train, X_test): Normalizes text data for both train and test sets.
+        embed_texts(X_train, X_test, y_train, y_test): Generates embeddings for text data using Ollama.
+        save_arrays(X_train, X_test, Y_train, Y_test): Saves the processed arrays to disk.
+        run_pipeline(dataset_name): Executes the complete data processing pipeline.
+
+    Raises:
+        Exception: If any step in the pipeline fails.
     """
     def __init__(
             self, 
@@ -356,6 +375,9 @@ class DataPipeline:
             raise
 
 def main() -> None:
+    """
+    Main function to run the data processing pipeline.
+    """
     pipeline = DataPipeline(
         encoder='nomic-embed-text',
         test_size=0.2,
@@ -363,5 +385,6 @@ def main() -> None:
     )
     pipeline.run_pipeline()
 
+# Entry point
 if __name__ == "__main__":
     main()
