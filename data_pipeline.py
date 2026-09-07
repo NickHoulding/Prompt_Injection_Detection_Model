@@ -239,11 +239,41 @@ class DataPipeline:
             print(f"[✗] Error in text normalization: {e}")
             raise
     
+    def _embed_batched(
+            self,
+            texts: list,
+            batch_size: int = 64
+        ) -> np.ndarray:
+        """
+        Embed a list of texts with Ollama in fixed-size batches.
+
+        Sending the full dataset in a single request causes the Ollama model
+        runner to crash (EOF on /tokenize), so requests are chunked.
+
+        Args:
+            texts (list): Text samples to embed.
+            batch_size (int): Number of texts per Ollama request.
+
+        Returns:
+            np.ndarray: Embeddings of shape (num_texts, embedding_dim).
+        """
+        embeddings = []
+        total = len(texts)
+
+        for start in range(0, total, batch_size):
+            batch = texts[start:start + batch_size]
+            response = ollama.embed(model=self.encoder, input=batch)
+            embeddings.extend(response['embeddings'])
+            print(f"      {min(start + batch_size, total)}/{total} embedded", end='\r')
+
+        print()
+        return np.array(embeddings)
+
     def embed_texts(
-            self, 
-            X_train: list, 
-            X_test: list, 
-            y_train: list, 
+            self,
+            X_train: list,
+            X_test: list,
+            y_train: list,
             y_test: list
         ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
@@ -265,18 +295,10 @@ class DataPipeline:
         
         try:
             print("    Embedding training data...")
-            train_response = ollama.embed(
-                model=self.encoder, 
-                input=X_train
-            )
-            X_train_embedded = np.array(train_response['embeddings']).T
-            
+            X_train_embedded = self._embed_batched(X_train).T
+
             print("    Embedding test data...")
-            test_response = ollama.embed(
-                model=self.encoder, 
-                input=X_test
-            )
-            X_test_embedded = np.array(test_response['embeddings']).T
+            X_test_embedded = self._embed_batched(X_test).T
             
             Y_train = np.array(y_train).reshape(1, -1)
             Y_test = np.array(y_test).reshape(1, -1)

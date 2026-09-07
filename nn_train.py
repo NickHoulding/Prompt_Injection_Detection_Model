@@ -1,13 +1,11 @@
 import tensorflow.keras.layers as tfl
 import tensorflow as tf
-import numpy as np
 import argparse
 import time
 import os
 from tensorflow.keras import regularizers
 
-# Globals
-LOAD_PATH = os.path.join(os.path.dirname(__file__), 'embeddings')
+from common import f1_score, load_embeddings, report_metrics, resolve_model_path
 
 def parse_args() -> argparse.Namespace:
     """
@@ -23,10 +21,17 @@ def parse_args() -> argparse.Namespace:
         help='Whether to save the trained model.'
     )
     parser.add_argument(
-        '--model_name', 
-        type=str, 
-        default='nn_model_' + str(time.time()), 
+        '--model_name',
+        type=str,
+        default='nn_model_' + str(time.time()),
         help='Name of the model file to save (should be a valid filename).'
+    )
+    parser.add_argument(
+        '--load_model',
+        type=str,
+        default=None,
+        help='Filepath to an existing .keras model to evaluate instead of '
+             'training a new one.'
     )
     return parser.parse_args()
 
@@ -37,15 +42,43 @@ def train(args: argparse.Namespace) -> None:
     Args:
         args (argparse.Namespace): Command line arguments.
     """
-    X_train = np.load(os.path.join(LOAD_PATH, 'X_train.npy'))
-    Y_train = np.load(os.path.join(LOAD_PATH, 'Y_train.npy'))
-    X_test = np.load(os.path.join(LOAD_PATH, 'X_test.npy'))
-    Y_test = np.load(os.path.join(LOAD_PATH, 'Y_test.npy'))
+    X_train, Y_train, X_test, Y_test = load_embeddings()
 
     X_train = X_train.T
     X_test = X_test.T
     Y_train = Y_train.flatten()
     Y_test = Y_test.flatten()
+
+    if args.load_model:
+        model_path = resolve_model_path(args.load_model, expected_suffix='.keras')
+        if model_path is None:
+            return
+
+        try:
+            model = tf.keras.models.load_model(model_path)
+        except Exception as e:
+            print(f"[✗] Could not load '{model_path}' as a Keras model: {e}")
+            return
+
+        print(f"Model loaded from {model_path}")
+
+        # Recompile with the eval metrics so evaluate() returns recall/precision
+        # regardless of how the saved model was originally compiled.
+        model.compile(
+            loss='binary_crossentropy',
+            metrics=[
+                tf.keras.metrics.Recall(name='recall'),
+                tf.keras.metrics.Precision(name='precision')
+            ]
+        )
+
+        _, recall, precision = model.evaluate(
+            X_test,
+            Y_test,
+            verbose=0
+        )
+        report_metrics("Test", recall, f1_score(recall, precision), precision)
+        return
 
     print(X_train.shape, Y_train.shape)
 
@@ -79,7 +112,10 @@ def train(args: argparse.Namespace) -> None:
     model.compile(
         optimizer='adam',
         loss='binary_crossentropy',
-        metrics=['accuracy']
+        metrics=[
+            tf.keras.metrics.Recall(name='recall'),
+            tf.keras.metrics.Precision(name='precision')
+        ]
     )
 
     tick = time.time()
@@ -94,22 +130,19 @@ def train(args: argparse.Namespace) -> None:
 
     print(f"Took: {tock - tick:.2f} seconds to train.")
 
-    loss, accuracy = model.evaluate(
-        X_train, 
-        Y_train, 
+    _, recall, precision = model.evaluate(
+        X_train,
+        Y_train,
         verbose=0
     )
-    print(f"Train accuracy: {accuracy:.4f}")
-    print(f"Loss: {loss:.4f}")
+    report_metrics("Train", recall, f1_score(recall, precision), precision)
 
-    loss, accuracy = model.evaluate(
-        X_test, 
-        Y_test, 
+    _, recall, precision = model.evaluate(
+        X_test,
+        Y_test,
         verbose=0
     )
-
-    print(f"Test accuracy: {accuracy:.4f}")
-    print(f"Loss: {loss:.4f}")
+    report_metrics("Test", recall, f1_score(recall, precision), precision)
 
     if args.save_model:
         tf.keras.models.save_model(

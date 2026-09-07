@@ -16,7 +16,7 @@ This project contains a complete end-to-end implementation of a prompt injection
 
 ## Dataset
 
-The project uses the [prompt-injection-safety](https://huggingface.co/datasets/jayavibhav/prompt-injection-safety) dataset from Hugging Face, which contains 60k labeled examples of legitimate prompts and prompt injection attempts in total.
+The project uses the [prompt-injection-safety](https://huggingface.co/datasets/jayavibhav/prompt-injection-safety) dataset from Hugging Face. The pipeline's multi-class labels are collapsed to binary (safe vs. injection), and after preprocessing roughly 60k labeled examples remain, split 80/20 into 47,962 training and 11,994 test examples.
 
 ## Model Architectures
 
@@ -44,6 +44,7 @@ The project uses the [prompt-injection-safety](https://huggingface.co/datasets/j
 ├── models/                     # Directory for trained model files
 │   ├── lr_model.pkl            # Trained logistic regression model 
 │   └── nn_model.keras          # Trained neural network model
+├── common.py                   # Shared helpers: metrics reporting, embedding loading, model-path resolution
 ├── data_pipeline.py            # Unified data processing pipeline
 ├── demo.py                     # Unified interactive demo interface
 ├── lr_train.py                 # Logistic regression model and training script
@@ -84,9 +85,9 @@ uv run data_pipeline.py
 - Converts multi-class labels to binary (legitimate vs malicious)
 - Performs stratified train/test split (80/20)
 - Applies comprehensive text preprocessing (normalization, lemmatization)
-- Generates embeddings using Ollama's `nomic-embed-text` model
+- Generates embeddings using Ollama's `nomic-embed-text` model, sent in fixed-size batches.
 - Saves processed embeddings as NumPy arrays to `embeddings/`
-- Requires Ollama to be installed and running with the embedding model
+- Requires Ollama to be installed and running with the embedding model (`ollama pull nomic-embed-text`)
 
 ### Step 2: Model Training
 
@@ -105,7 +106,7 @@ uv run lr_train.py --save_model --model_name my_custom_lr_model
 - Instantiates a new custom logistic regression model object
 - Trains the model on the embedded training features
     - Hyperparameters: learning_rate=23.75, num_iterations=2500
-- Evaluates model performance on the test set
+- Reports recall (primary), F1 (secondary), and precision for the injection class on both the train and test sets
 - Optionally saves trained model as `models/{model_name}.pkl` when `--save_model` flag is used
 
 #### Neural Network Model
@@ -120,8 +121,9 @@ uv run nn_train.py
 uv run nn_train.py --save_model --model_name my_custom_nn_model
 ```
 - Loads processed embeddings from `embeddings/` directory
-- Creates and trains a deep neural network using TensorFlow
+- Creates and trains a deep neural network using TensorFlow (100 epochs, batch size 512)
 - Applies regularization techniques (L2, dropout, batch normalization)
+- Reports recall (primary), F1 (secondary), and precision for the injection class on both the train and test sets
 - Optionally saves trained model as `models/{model_name}.keras` when `--save_model` flag is used
 
 ### Step 3: Interactive Testing
@@ -148,6 +150,7 @@ Both training scripts (`lr_train.py` and `nn_train.py`) support the following ar
 
 - `--save_model`: Flag to save the trained model to disk (optional)
 - `--model_name`: Custom name for the saved model file (optional, defaults to timestamped name. This *MUST* be formatted as a valid filename if specified.)
+- `--load_model`: Filepath to an existing model file. When set, training is skipped and the script only evaluates that model on the test set (`.pkl` for `lr_train.py`, `.keras` for `nn_train.py`).
 
 **Examples:**
 ```bash
@@ -162,6 +165,10 @@ uv run nn_train.py --save_model --model_name custom_nn_model
 # Train without saving (useful for experimentation)
 uv run lr_train.py
 uv run nn_train.py
+
+# Skip training and only evaluate an existing model on the test set
+uv run lr_train.py --load_model models/lr_model.pkl
+uv run nn_train.py --load_model models/nn_model.keras
 ```
 
 ### Demo Script
@@ -182,14 +189,39 @@ uv run demo.py --model lr
 uv run demo.py --model nn
 ```
 
-## Expected Results
+## Model Performance
 
-After training, you should see test accuracy for prompt injection detection:
+Both models are evaluated on the injection (positive) class using **recall as the
+primary metric** and **F1 as the secondary metric**, with precision reported for
+context. Metrics below are from the checked-in models (`models/lr_model.pkl`,
+`models/nn_model.keras`) evaluated on the 11,994-example test set; reproduce them
+with `uv run lr_train.py --load_model models/lr_model.pkl` and
+`uv run nn_train.py --load_model models/nn_model.keras`.
 
-- **Logistic Regression Model**: ~94% test accuracy
-- **Neural Network Model**: ~95% test accuracy
+| Model | Split | Recall | F1 | Precision |
+|-------|-------|--------|------|-----------|
+| Logistic Regression | Train | 0.9522 | 0.9524 | 0.9525 |
+| Logistic Regression | Test  | 0.9477 | 0.9509 | 0.9542 |
+| Neural Network      | Train | 0.9670 | 0.9623 | 0.9577 |
+| Neural Network      | Test  | 0.9616 | 0.9587 | 0.9559 |
 
-Both models provide:
+The neural network edges out logistic regression on every metric, and the small
+train/test gap for both models indicates the regularization is keeping overfitting in check.
+
+### Why recall + F1 instead of accuracy
+
+- **A missed injection is the expensive error.** In a security setting, a false
+  negative (an attack classified as safe) is far more costly than a false positive.
+  Recall directly measures the fraction of real injections the model catches.
+- **Accuracy hides that trade-off.** With a roughly balanced test set a model can
+post high accuracy while still letting a meaningful share of attacks through;
+  accuracy alone gives no visibility into the false-negative rate.
+- **F1 guards against a trivial high-recall model.** Optimizing recall in isolation
+  rewards flagging everything as malicious. F1 (the harmonic mean of precision and
+  recall) keeps precision honest, so the secondary metric ensures the model stays
+  usable.
+
+Both models also provide:
 - Binary classification (legitimate vs malicious)
 - Confidence scores (probability estimates)
 - Real-time inference capabilities
@@ -200,7 +232,8 @@ Both models provide:
 - **Custom Logistic Regression**: Built from scratch without sklearn, includes complete model class definition and training script in a single file
 - **Deep Neural Network**: TensorFlow/Keras implementation with advanced regularization
 - **Unified Interface**: Single demo script supporting both models via command-line arguments
-- **Flexible Training**: Command-line arguments for model saving and custom naming
+- **Flexible Training**: Command-line arguments for model saving, custom naming, and re-evaluating a saved model without retraining (`--load_model`)
+- **Consistent Evaluation**: Both scripts print recall / F1 / precision for the injection class in an identical format
 
 ### Streamlined Data Processing
 - **Unified Pipeline**: Single script handles complete data workflow from download to embeddings
@@ -219,7 +252,8 @@ Both models provide:
 - **Unified Data Pipeline**: Complete end-to-end processing from raw text to embeddings in a single script
 - **Dual Architecture Approach**: Compare custom implementation vs. deep learning performance
 - **Consolidated Model Implementation**: Logistic regression model class and training script combined for streamlined development
-- **Flexible Training Options**: Command-line arguments for model saving, custom naming, and training configuration
+- **Flexible Training Options**: Command-line arguments for model saving, custom naming, and skipping training to evaluate an existing model
+- **Security-Minded Metrics**: Recall-first evaluation (with F1 as a secondary metric) instead of accuracy, reflecting the cost of missed injections
 - **Mathematical Implementation**: Custom gradient descent with vectorized operations
 - **Modern Dependency Management**: UV for fast, reliable Python package management
 - **Memory Efficiency**: Vectorized NumPy operations for large embedding matrices
@@ -236,6 +270,7 @@ Key packages in this project and how they're used:
 - `nltk`: Natural language preprocessing (normalization)
 - `datasets`: Hugging Face dataset integration
 - `scikit-learn`: Dataset stratification
+- `matplotlib`: Plotting training cost curves during experimentation
 
 Project management tools:
 - **UV**: Modern Python package manager (requires Python >=3.11)

@@ -3,6 +3,7 @@ import numpy as np
 import argparse
 import ollama
 import os
+from common import resolve_model_path
 from lr_train import load_model
 
 def parse_args() -> argparse.Namespace:
@@ -39,10 +40,11 @@ def main() -> None:
     try:
         if model_type == 'lr':
             print("[-] Loading logistic regression model...")
-            model_path = os.path.join(os.path.dirname(__file__), 'models', 'lr_model.pkl')
-            
-            if not os.path.exists(model_path):
-                print(f"[✗] Model file not found: {model_path}")
+            model_path = resolve_model_path(
+                os.path.join(os.path.dirname(__file__), 'models', 'lr_model.pkl')
+            )
+
+            if model_path is None:
                 return
 
             model = load_model(model_path)
@@ -57,7 +59,13 @@ def main() -> None:
 
         elif model_type == 'nn':
             print("[-] Loading neural network model...")
-            model_path = os.path.join(os.path.dirname(__file__), 'models', 'nn_model.keras')
+            model_path = resolve_model_path(
+                os.path.join(os.path.dirname(__file__), 'models', 'nn_model.keras')
+            )
+
+            if model_path is None:
+                return
+
             model = tf.keras.models.load_model(model_path)
             model.summary()
 

@@ -5,8 +5,12 @@ import time
 import os
 from typing import Union, Dict, Tuple, List
 
-# Globals
-LOAD_PATH = os.path.join(os.path.dirname(__file__), 'embeddings')
+from common import (
+    f1_score,
+    load_embeddings,
+    report_metrics,
+    resolve_model_path,
+)
 
 # External function to load a Logistic Regression model
 def load_model(file_path: str) -> 'LogisticRegressionModel':
@@ -253,25 +257,34 @@ class LogisticRegressionModel:
         ) -> Dict[str, Union[str, float, np.ndarray]]:
         """
         Evaluate the model on test data.
-        
+
         Args:
             X_test (np.ndarray): Test set of shape (num_features, m_test).
             Y_test (np.ndarray): Test labels of shape (1, m_test).
-        
+
         Returns:
             results (dict): Dictionary containing evaluation metrics.
         """
         if not self.is_trained:
             raise ValueError("Model must be trained before evaluation. Call fit() first.")
-        
+
         Y_prediction = self.predict(X_test)
-        accuracy = np.mean(Y_prediction == Y_test) * 100
-        
+        y_pred = Y_prediction.flatten()
+        y_true = Y_test.flatten()
+
+        tp = int(np.sum((y_pred == 1) & (y_true == 1)))
+        fn = int(np.sum((y_pred == 0) & (y_true == 1)))
+        fp = int(np.sum((y_pred == 1) & (y_true == 0)))
+
+        recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+        precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+
         return {
             "model_name": self.name,
-            "accuracy": accuracy,
+            "recall": recall,
+            "f1": f1_score(recall, precision),
+            "precision": precision,
             "predictions": Y_prediction,
-            "num_correct": np.sum(Y_prediction == Y_test),
             "num_total": Y_test.shape[1]
         }
     
@@ -313,10 +326,17 @@ def parse_args() -> argparse.Namespace:
         help='Whether to save the trained model to a .pkl file.'
     )
     parser.add_argument(
-        '--model_name', 
-        type=str, 
-        default='lr_model_' + str(time.time()), 
+        '--model_name',
+        type=str,
+        default='lr_model_' + str(time.time()),
         help='Name of the model file to save (should be a valid filename).'
+    )
+    parser.add_argument(
+        '--load_model',
+        type=str,
+        default=None,
+        help='Filepath to an existing .pkl model to evaluate instead of '
+             'training a new one.'
     )
     return parser.parse_args()
 
@@ -327,35 +347,66 @@ def train(args: argparse.Namespace) -> None:
     Args:
         args (argparse.Namespace): Command line arguments.
     """
-    X_train = np.load(os.path.join(LOAD_PATH, 'X_train.npy'))
-    Y_train = np.load(os.path.join(LOAD_PATH, 'Y_train.npy'))
-    X_test = np.load(os.path.join(LOAD_PATH, 'X_test.npy'))
-    Y_test = np.load(os.path.join(LOAD_PATH, 'Y_test.npy'))
+    X_train, Y_train, X_test, Y_test = load_embeddings()
 
-    model = LogisticRegressionModel(
-        name="lr_model",
-        learning_rate=23.75,
-        num_iterations=2500
-    )
+    if args.load_model:
+        model_path = resolve_model_path(args.load_model, expected_suffix='.pkl')
+        if model_path is None:
+            return
 
-    tick = time.time()
-    model.fit(
-        X_train=X_train, 
-        Y_train=Y_train, 
-        print_cost=True
-    )
-    tock = time.time()
-    seconds = tock - tick
-    print(f"Training time: {seconds // 60:.2f} minutes, {seconds % 60:.2f} seconds")
+        try:
+            model = load_model(model_path)
+        except Exception as e:
+            print(f"[✗] Could not unpickle '{model_path}' as a Logistic Regression model: {e}")
+            return
+
+        if not isinstance(model, LogisticRegressionModel):
+            print(
+                f"[✗] '{model_path}' contains a {type(model).__name__}, "
+                "not a LogisticRegressionModel."
+            )
+            return
+    else:
+        model = LogisticRegressionModel(
+            name="lr_model",
+            learning_rate=23.75,
+            num_iterations=2500
+        )
+
+        tick = time.time()
+        model.fit(
+            X_train=X_train,
+            Y_train=Y_train,
+            print_cost=True
+        )
+        tock = time.time()
+        seconds = tock - tick
+        print(f"Training time: {seconds // 60:.2f} minutes, {seconds % 60:.2f} seconds")
+
+    if not args.load_model:
+        train_evaluation = model.evaluate(
+            X_test=X_train,
+            Y_test=Y_train
+        )
+        report_metrics(
+            "Train",
+            train_evaluation['recall'],
+            train_evaluation['f1'],
+            train_evaluation['precision']
+        )
 
     evaluation = model.evaluate(
-        X_test=X_test, 
+        X_test=X_test,
         Y_test=Y_test
     )
+    report_metrics(
+        "Test",
+        evaluation['recall'],
+        evaluation['f1'],
+        evaluation['precision']
+    )
 
-    print(f"Test accuracy: {evaluation['accuracy']:.2f}%")
-
-    if args.save_model:
+    if args.save_model and not args.load_model:
         model.name = args.model_name
         model.save_model(
             os.path.join(
@@ -366,5 +417,9 @@ def train(args: argparse.Namespace) -> None:
 
 # Entry point
 if __name__ == "__main__":
-    args = parse_args()
-    train(args)
+    # Re-enter through the module namespace so a model pickled here is stored as
+    # `lr_train.LogisticRegressionModel` (not `__main__....`), keeping saved
+    # models loadable from other scripts such as demo.py.
+    from lr_train import parse_args as _parse_args, train as _train
+
+    _train(_parse_args())
