@@ -3,7 +3,7 @@ import numpy as np
 import argparse
 import ollama
 import os
-from common import resolve_model_path
+from common import MODELS_PATH, resolve_model_path
 from lr_train import load_model
 
 def parse_args() -> argparse.Namespace:
@@ -41,7 +41,7 @@ def main() -> None:
         if model_type == 'lr':
             print("[-] Loading logistic regression model...")
             model_path = resolve_model_path(
-                os.path.join(os.path.dirname(__file__), 'models', 'lr_model.pkl')
+                os.path.join(MODELS_PATH, 'lr_model.pkl')
             )
 
             if model_path is None:
@@ -60,7 +60,7 @@ def main() -> None:
         elif model_type == 'nn':
             print("[-] Loading neural network model...")
             model_path = resolve_model_path(
-                os.path.join(os.path.dirname(__file__), 'models', 'nn_model.keras')
+                os.path.join(MODELS_PATH, 'nn_model.keras')
             )
 
             if model_path is None:

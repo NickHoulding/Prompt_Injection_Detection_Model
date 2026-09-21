@@ -5,7 +5,7 @@ import time
 import os
 from tensorflow.keras import regularizers
 
-from common import f1_score, load_embeddings, report_metrics, resolve_model_path
+from common import MODELS_PATH, f1_score, load_embeddings, report_metrics, resolve_model_path
 
 def parse_args() -> argparse.Namespace:
     """
@@ -146,12 +146,8 @@ def train(args: argparse.Namespace) -> None:
 
     if args.save_model:
         tf.keras.models.save_model(
-            model, 
-            os.path.join(
-                os.path.dirname(__file__), 
-                'models', 
-                args.model_name + '.keras'
-            )
+            model,
+            os.path.join(MODELS_PATH, args.model_name + '.keras')
         )
 
 # Entry point

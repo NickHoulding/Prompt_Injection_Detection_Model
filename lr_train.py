@@ -6,6 +6,7 @@ import os
 from typing import Union, Dict, Tuple, List
 
 from common import (
+    MODELS_PATH,
     f1_score,
     load_embeddings,
     report_metrics,
@@ -408,12 +409,7 @@ def train(args: argparse.Namespace) -> None:
 
     if args.save_model and not args.load_model:
         model.name = args.model_name
-        model.save_model(
-            os.path.join(
-                os.path.dirname(__file__), 
-                'models'
-            )
-        )
+        model.save_model(MODELS_PATH)
 
 # Entry point
 if __name__ == "__main__":

@@ -12,6 +12,7 @@ from typing import Optional, Tuple
 
 # Globals
 EMBEDDINGS_PATH = os.path.join(os.path.dirname(__file__), 'embeddings')
+MODELS_PATH = os.path.join(os.path.dirname(__file__), 'models')
 
 
 def load_embeddings() -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
