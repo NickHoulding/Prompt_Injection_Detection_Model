@@ -7,6 +7,7 @@ from typing import Any
 from common import MODELS_PATH, resolve_model_path
 from lr_train import load_model
 
+
 def parse_args() -> argparse.Namespace:
     """
     Parses command line arguments.
@@ -18,12 +19,13 @@ def parse_args() -> argparse.Namespace:
         description="Prompt Injection Detection: Interactive Demo"
     )
     parser.add_argument(
-        '--model', 
-        type=str, 
-        default='nn', 
-        help='Select either "nn" for neural network or "lr" for logistic regression model.'
+        "--model",
+        type=str,
+        default="nn",
+        help='Select either "nn" for neural network or "lr" for logistic regression model.',
     )
     return parser.parse_args()
+
 
 def main() -> None:
     """
@@ -34,18 +36,18 @@ def main() -> None:
     args = parse_args()
     model_type = args.model
 
-    if model_type not in ['nn', 'lr']:
-        print("[✗] Invalid model type specified. Use 'nn' for neural network or 'lr' for logistic regression.")
+    if model_type not in ["nn", "lr"]:
+        print(
+            "[✗] Invalid model type specified. Use 'nn' for neural network or 'lr' for logistic regression."
+        )
         return
 
     model: Any
 
     try:
-        if model_type == 'lr':
+        if model_type == "lr":
             print("[-] Loading logistic regression model...")
-            model_path = resolve_model_path(
-                os.path.join(MODELS_PATH, 'lr_model.pkl')
-            )
+            model_path = resolve_model_path(os.path.join(MODELS_PATH, "lr_model.pkl"))
 
             if model_path is None:
                 return
@@ -56,15 +58,15 @@ def main() -> None:
             print(f"Learning rate: {model.learning_rate}")
             print(f"Number of iterations: {model.num_iterations}")
             print(f"Is trained: {model.is_trained}")
-            print(f"Weight shape: {model.weights.shape if model.weights is not None else 'None'}")
+            print(
+                f"Weight shape: {model.weights.shape if model.weights is not None else 'None'}"
+            )
             print(f"Bias: {model.bias}")
             print(f"Number of training costs recorded: {len(model.costs)}")
 
-        elif model_type == 'nn':
+        elif model_type == "nn":
             print("[-] Loading neural network model...")
-            model_path = resolve_model_path(
-                os.path.join(MODELS_PATH, 'nn_model.keras')
-            )
+            model_path = resolve_model_path(os.path.join(MODELS_PATH, "nn_model.keras"))
 
             if model_path is None:
                 return
@@ -76,18 +78,18 @@ def main() -> None:
         print(f"[✗] Error loading model: {e}")
         return
 
-    print("[✓] Model loaded successfully!\n")    
+    print("[✓] Model loaded successfully!\n")
     print("Model is ready! You can now test prompts for injection detection.")
     print("Type 'quit', 'exit', or 'q' to stop.\n")
-    
+
     while True:
         try:
             user_input = input("Enter a prompt to analyze: ").strip()
-            
-            if user_input.lower() in ['quit', 'exit', 'q']:
+
+            if user_input.lower() in ["quit", "exit", "q"]:
                 print("[✓] Goodbye!")
                 break
-            
+
             if not user_input:
                 print("[✗] Please enter a non-empty prompt.\n")
                 continue
@@ -97,34 +99,39 @@ def main() -> None:
                 input=user_input,
             )
 
-            if model_type == 'nn':
-                X_input = np.array(response['embeddings']).reshape(1, -1)
+            if model_type == "nn":
+                X_input = np.array(response["embeddings"]).reshape(1, -1)
                 prediction = model.predict(X_input, verbose=0)
                 probability = prediction[0, 0]
 
                 is_malicious = probability > 0.5
                 confidence = probability if is_malicious else 1 - probability
                 raw_prob_malicious = probability
-            elif model_type == 'lr':
-                X_input = np.array(response['embeddings']).reshape(-1, 1)
+            elif model_type == "lr":
+                X_input = np.array(response["embeddings"]).reshape(-1, 1)
                 prediction = model.predict(X_input)
                 probability = model.predict_proba(X_input)
 
                 is_malicious = prediction[0, 0] == 1
                 raw_prob_malicious = probability[0, 0]
-                confidence = raw_prob_malicious if is_malicious else 1 - raw_prob_malicious
-            
+                confidence = (
+                    raw_prob_malicious if is_malicious else 1 - raw_prob_malicious
+                )
+
             print(f"\n--- Results ---")
-            print(f"Classification: {'[!] MALICIOUS' if is_malicious else '[✓] LEGITIMATE'}")
+            print(
+                f"Classification: {'[!] MALICIOUS' if is_malicious else '[✓] LEGITIMATE'}"
+            )
             print(f"Confidence: {confidence:.2%}")
             print(f"Raw probability (malicious): {raw_prob_malicious:.4f}")
             print("-" * 40 + "\n")
-            
+
         except KeyboardInterrupt:
             print("\n\nGoodbye!")
             break
         except Exception as e:
             print(f"Error processing input: {e}\n")
+
 
 # Entry point
 if __name__ == "__main__":

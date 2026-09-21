@@ -13,9 +13,11 @@ from common import (
     resolve_model_path,
 )
 
+
 @dataclass
 class EvaluationResult:
     """Evaluation metrics and predictions returned by ``LogisticRegressionModel.evaluate``."""
+
     model_name: str
     recall: float
     f1: float
@@ -23,29 +25,31 @@ class EvaluationResult:
     predictions: np.ndarray
     num_total: int
 
+
 # External function to load a Logistic Regression model
-def load_model(file_path: str) -> 'LogisticRegressionModel':
+def load_model(file_path: str) -> "LogisticRegressionModel":
     """
     Load a Logistic Regression model from a file.
-    
+
     Args:
         file_path (str): Path to the model file.
-    
+
     Returns:
         model (LogisticRegressionModel): Loaded model instance.
     """
-    with open(file_path, 'rb') as f:
+    with open(file_path, "rb") as f:
         model = pkl.load(f)
-    
+
     print(f"Model loaded from {file_path}")
-    
+
     return model
+
 
 # Model Class Definition
 class LogisticRegressionModel:
     """
     Logistic Regression model for binary classification.
-    
+
     Attributes:
         name (str): Name of the model.
         learning_rate (float): Learning rate for gradient descent.
@@ -78,12 +82,10 @@ class LogisticRegressionModel:
     Raises:
         ValueError: If the model is not trained before making predictions.
     """
+
     def __init__(
-            self, 
-            learning_rate=0.01, 
-            num_iterations=2000, 
-            name="default_name"
-        ) -> None:
+        self, learning_rate=0.01, num_iterations=2000, name="default_name"
+    ) -> None:
         self.name = name
         self.learning_rate = learning_rate
         self.num_iterations = num_iterations
@@ -91,25 +93,19 @@ class LogisticRegressionModel:
         self.bias: float | None = None
         self.is_trained = False
         self.costs: list[float] = []
-    
-    def _initialize_with_zeros(
-            self, 
-            dim: int
-        ) -> None:
+
+    def _initialize_with_zeros(self, dim: int) -> None:
         """
-        Creates a vector of zeros of shape (dim, 1) for weights and 
+        Creates a vector of zeros of shape (dim, 1) for weights and
         initializes bias to 0.
-        
+
         Args:
             dim (int): Size of the weight vector we want (number of features).
         """
         self.weights = np.zeros((dim, 1))
         self.bias = 0.0
-    
-    def _sigmoid(
-            self,
-            z: float | np.ndarray
-        ) -> np.ndarray:
+
+    def _sigmoid(self, z: float | np.ndarray) -> np.ndarray:
         """
         Computes the sigmoid of z.
 
@@ -121,12 +117,10 @@ class LogisticRegressionModel:
         """
         z = np.clip(z, -250, 250)
         return 1 / (1 + np.exp(-z))
-    
+
     def _propagate(
-            self, 
-            X: np.ndarray, 
-            Y: np.ndarray
-        ) -> tuple[dict[str, np.ndarray], float]:
+        self, X: np.ndarray, Y: np.ndarray
+    ) -> tuple[dict[str, np.ndarray], float]:
         """
         Implement the cost function and its gradient for propagation.
 
@@ -140,9 +134,9 @@ class LogisticRegressionModel:
         """
         if self.weights is None or self.bias is None:
             raise ValueError("Weights and bias are not initialized.")
-        
+
         m = X.shape[1]
-        
+
         # Forward propagation
         Z = np.dot(self.weights.T, X) + self.bias
         A = self._sigmoid(Z)
@@ -150,57 +144,49 @@ class LogisticRegressionModel:
         epsilon = 1e-15
         A = np.clip(A, epsilon, 1 - epsilon)
 
-        cost = -(1/m) * np.sum(Y * np.log(A) + (1 - Y) * np.log(1 - A))
+        cost = -(1 / m) * np.sum(Y * np.log(A) + (1 - Y) * np.log(1 - A))
 
         # Backward propagation
         dZ = A - Y
-        dw = 1/m * np.dot(X, dZ.T)
-        db = 1/m * np.sum(dZ)
+        dw = 1 / m * np.dot(X, dZ.T)
+        db = 1 / m * np.sum(dZ)
 
         cost = float(np.squeeze(np.array(cost)))
         grads = {"dw": dw, "db": db}
-        
+
         return grads, cost
-    
-    def _optimize(
-            self, 
-            X: np.ndarray, 
-            Y: np.ndarray, 
-            print_cost=False
-        ) -> None:
+
+    def _optimize(self, X: np.ndarray, Y: np.ndarray, print_cost=False) -> None:
         """
         Optimizes weights and bias by running gradient descent algorithm.
-        
+
         Args:
             X (np.ndarray): Data of shape (num_features, number of examples).
             Y (np.ndarray): True "label" vector of shape (1, number of examples).
             print_cost (bool): True to print the loss every 100 steps.
         """
-        assert self.weights is not None, "Weights must be initialized before optimization."
+        assert (
+            self.weights is not None
+        ), "Weights must be initialized before optimization."
         assert self.bias is not None, "Bias must be initialized before optimization."
         self.costs = []
-        
+
         for i in range(self.num_iterations):
             grads, cost = self._propagate(X, Y)
-            
+
             dw = grads["dw"]
             db = grads["db"]
-            
+
             self.weights = self.weights - (self.learning_rate * dw)
             self.bias = self.bias - (self.learning_rate * db)
-            
+
             if i % 100 == 0:
                 self.costs.append(cost)
-            
+
                 if print_cost:
                     print("Cost after iteration %i: %f" % (i, cost))
-    
-    def fit(
-            self, 
-            X_train: np.ndarray, 
-            Y_train: np.ndarray, 
-            print_cost=False
-        ) -> None:
+
+    def fit(self, X_train: np.ndarray, Y_train: np.ndarray, print_cost=False) -> None:
         """
         Train the logistic regression model.
 
@@ -213,41 +199,37 @@ class LogisticRegressionModel:
         self._initialize_with_zeros(dim=X_train.shape[0])
         self._optimize(X_train, Y_train, print_cost)
         self.is_trained = True
-        
+
         if print_cost:
             print(f"Training completed after {self.num_iterations} iterations")
-    
-    def predict(
-            self, 
-            X: np.ndarray
-        ) -> np.ndarray:
+
+    def predict(self, X: np.ndarray) -> np.ndarray:
         """
-        Predicts whether the label is 0 or 1 using learned logistic 
+        Predicts whether the label is 0 or 1 using learned logistic
         regression parameters.
-        
+
         Args:
             X (np.ndarray): Data of size (num_features, number of examples).
 
         Returns:
-            Y_prediction (np.ndarray): A numpy array containing all 
+            Y_prediction (np.ndarray): A numpy array containing all
                 predictions (0/1) for the examples in X.
         """
         if not self.is_trained or self.weights is None:
-            raise ValueError("Model must be trained before making predictions. Call fit() first.")
-        
+            raise ValueError(
+                "Model must be trained before making predictions. Call fit() first."
+            )
+
         weights = self.weights.reshape(X.shape[0], 1)
         A = self._sigmoid(np.dot(weights.T, X) + self.bias)
         Y_prediction = (A > 0.5).astype(int)
 
         return Y_prediction
-    
-    def predict_proba(
-            self, 
-            X: np.ndarray
-        ) -> np.ndarray:
+
+    def predict_proba(self, X: np.ndarray) -> np.ndarray:
         """
         Predicts the probabilities for each class.
-        
+
         Args:
             X (np.ndarray): Data of size (num_features, number of examples).
 
@@ -255,17 +237,15 @@ class LogisticRegressionModel:
             probabilities (np.ndarray): Predicted probabilities for each example.
         """
         if not self.is_trained or self.weights is None:
-            raise ValueError("Model must be trained before making predictions. Call fit() first.")
-        
+            raise ValueError(
+                "Model must be trained before making predictions. Call fit() first."
+            )
+
         weights = self.weights.reshape(X.shape[0], 1)
 
         return self._sigmoid(np.dot(weights.T, X) + self.bias)
-    
-    def evaluate(
-            self,
-            X_test: np.ndarray,
-            Y_test: np.ndarray
-        ) -> EvaluationResult:
+
+    def evaluate(self, X_test: np.ndarray, Y_test: np.ndarray) -> EvaluationResult:
         """
         Evaluate the model on test data.
 
@@ -277,7 +257,9 @@ class LogisticRegressionModel:
             results (dict): Dictionary containing evaluation metrics.
         """
         if not self.is_trained:
-            raise ValueError("Model must be trained before evaluation. Call fit() first.")
+            raise ValueError(
+                "Model must be trained before evaluation. Call fit() first."
+            )
 
         Y_prediction = self.predict(X_test)
         y_pred = Y_prediction.flatten()
@@ -296,32 +278,33 @@ class LogisticRegressionModel:
             f1=f1_score(recall, precision),
             precision=precision,
             predictions=Y_prediction,
-            num_total=Y_test.shape[1]
+            num_total=Y_test.shape[1],
         )
-    
+
     def get_costs(self) -> list[float]:
         """
         Returns the list of costs during training.
-        
+
         Returns:
             costs (list): List of costs computed during optimization.
         """
         return self.costs
-    
+
     def save_model(self, file_path: str) -> None:
         """
         Save the model to a file.
-        
+
         Args:
             file_path (str): Path to save the model.
         """
-        final_path = os.path.join(file_path, self.name + '.pkl')
+        final_path = os.path.join(file_path, self.name + ".pkl")
 
         os.makedirs(file_path, exist_ok=True)
-        with open(final_path, 'wb') as f:
+        with open(final_path, "wb") as f:
             pkl.dump(self, f)
 
         print(f"Model saved to {final_path}")
+
 
 def parse_args() -> argparse.Namespace:
     """
@@ -332,24 +315,25 @@ def parse_args() -> argparse.Namespace:
     """
     parser = argparse.ArgumentParser(description="Train a Logistic Regression model.")
     parser.add_argument(
-        '--save_model', 
-        action='store_true',
-        help='Whether to save the trained model to a .pkl file.'
+        "--save_model",
+        action="store_true",
+        help="Whether to save the trained model to a .pkl file.",
     )
     parser.add_argument(
-        '--model_name',
+        "--model_name",
         type=str,
-        default='lr_model_' + str(time.time()),
-        help='Name of the model file to save (should be a valid filename).'
+        default="lr_model_" + str(time.time()),
+        help="Name of the model file to save (should be a valid filename).",
     )
     parser.add_argument(
-        '--load_model',
+        "--load_model",
         type=str,
         default=None,
-        help='Filepath to an existing .pkl model to evaluate instead of '
-             'training a new one.'
+        help="Filepath to an existing .pkl model to evaluate instead of "
+        "training a new one.",
     )
     return parser.parse_args()
+
 
 def train(args: argparse.Namespace) -> None:
     """
@@ -361,14 +345,16 @@ def train(args: argparse.Namespace) -> None:
     X_train, Y_train, X_test, Y_test = load_embeddings()
 
     if args.load_model:
-        model_path = resolve_model_path(args.load_model, expected_suffix='.pkl')
+        model_path = resolve_model_path(args.load_model, expected_suffix=".pkl")
         if model_path is None:
             return
 
         try:
             model = load_model(model_path)
         except Exception as e:
-            print(f"[✗] Could not unpickle '{model_path}' as a Logistic Regression model: {e}")
+            print(
+                f"[✗] Could not unpickle '{model_path}' as a Logistic Regression model: {e}"
+            )
             return
 
         if not isinstance(model, LogisticRegressionModel):
@@ -379,47 +365,31 @@ def train(args: argparse.Namespace) -> None:
             return
     else:
         model = LogisticRegressionModel(
-            name="lr_model",
-            learning_rate=23.75,
-            num_iterations=2500
+            name="lr_model", learning_rate=23.75, num_iterations=2500
         )
 
         tick = time.time()
-        model.fit(
-            X_train=X_train,
-            Y_train=Y_train,
-            print_cost=True
-        )
+        model.fit(X_train=X_train, Y_train=Y_train, print_cost=True)
         tock = time.time()
         seconds = tock - tick
         print(f"Training time: {seconds // 60:.2f} minutes, {seconds % 60:.2f} seconds")
 
     if not args.load_model:
-        train_evaluation = model.evaluate(
-            X_test=X_train,
-            Y_test=Y_train
-        )
+        train_evaluation = model.evaluate(X_test=X_train, Y_test=Y_train)
         report_metrics(
             "Train",
             train_evaluation.recall,
             train_evaluation.f1,
-            train_evaluation.precision
+            train_evaluation.precision,
         )
 
-    evaluation = model.evaluate(
-        X_test=X_test,
-        Y_test=Y_test
-    )
-    report_metrics(
-        "Test",
-        evaluation.recall,
-        evaluation.f1,
-        evaluation.precision
-    )
+    evaluation = model.evaluate(X_test=X_test, Y_test=Y_test)
+    report_metrics("Test", evaluation.recall, evaluation.f1, evaluation.precision)
 
     if args.save_model and not args.load_model:
         model.name = args.model_name
         model.save_model(MODELS_PATH)
+
 
 # Entry point
 if __name__ == "__main__":

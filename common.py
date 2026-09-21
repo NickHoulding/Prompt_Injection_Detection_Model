@@ -10,8 +10,8 @@ import numpy as np
 import os
 
 # Globals
-EMBEDDINGS_PATH = os.path.join(os.path.dirname(__file__), 'embeddings')
-MODELS_PATH = os.path.join(os.path.dirname(__file__), 'models')
+EMBEDDINGS_PATH = os.path.join(os.path.dirname(__file__), "embeddings")
+MODELS_PATH = os.path.join(os.path.dirname(__file__), "models")
 
 
 def load_embeddings() -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
@@ -25,18 +25,17 @@ def load_embeddings() -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     Returns:
         tuple: ``(X_train, Y_train, X_test, Y_test)`` as numpy arrays.
     """
-    X_train = np.load(os.path.join(EMBEDDINGS_PATH, 'X_train.npy'))
-    Y_train = np.load(os.path.join(EMBEDDINGS_PATH, 'Y_train.npy'))
-    X_test = np.load(os.path.join(EMBEDDINGS_PATH, 'X_test.npy'))
-    Y_test = np.load(os.path.join(EMBEDDINGS_PATH, 'Y_test.npy'))
+    X_train = np.load(os.path.join(EMBEDDINGS_PATH, "X_train.npy"))
+    Y_train = np.load(os.path.join(EMBEDDINGS_PATH, "Y_train.npy"))
+    X_test = np.load(os.path.join(EMBEDDINGS_PATH, "X_test.npy"))
+    Y_test = np.load(os.path.join(EMBEDDINGS_PATH, "Y_test.npy"))
 
     return X_train, Y_train, X_test, Y_test
 
 
 def resolve_model_path(
-        file_path: str,
-        expected_suffix: str | None = None
-    ) -> str | None:
+    file_path: str, expected_suffix: str | None = None
+) -> str | None:
     """
     Validate that a model file exists (and has the expected type) before loading.
 
@@ -55,9 +54,7 @@ def resolve_model_path(
         return None
 
     if expected_suffix and os.path.splitext(file_path)[1] != expected_suffix:
-        print(
-            f"[✗] {file_path} does not look like a {expected_suffix} model file. "
-        )
+        print(f"[✗] {file_path} does not look like a {expected_suffix} model file. ")
         return None
 
     return file_path
@@ -80,12 +77,7 @@ def f1_score(recall: float, precision: float) -> float:
     return 2 * (recall * precision / (recall + precision))
 
 
-def report_metrics(
-        split: str,
-        recall: float,
-        f1: float,
-        precision: float
-    ) -> None:
+def report_metrics(split: str, recall: float, f1: float, precision: float) -> None:
     """
     Print evaluation metrics for the prompt injection class in a fixed format.
 
