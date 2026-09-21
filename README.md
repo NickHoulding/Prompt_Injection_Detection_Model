@@ -270,7 +270,6 @@ Key packages in this project and how they're used:
 - `nltk`: Natural language preprocessing (normalization)
 - `datasets`: Hugging Face dataset integration
 - `scikit-learn`: Dataset stratification
-- `matplotlib`: Plotting training cost curves during experimentation
 
 Project management tools:
 - **UV**: Modern Python package manager (requires Python >=3.11)
