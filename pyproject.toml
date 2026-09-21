@@ -1,7 +1,7 @@
 [project]
 name = "prompt-injection-detection-model"
 version = "0.1.0"
-description = "Add your description here"
+description = "Prompt injection detection using custom logistic regression and neural network models trained on Ollama text embeddings"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [

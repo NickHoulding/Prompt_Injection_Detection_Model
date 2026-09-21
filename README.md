@@ -265,7 +265,7 @@ Both models also provide:
 Key packages in this project and how they're used:
 - `ollama`: Text embedding generation
 - `tensorflow`: Deep learning framework for neural network implementation
-- `pandas`: Data manipulation and CSV handling
+- `pandas`: NaN/missing-value checks during text normalization
 - `numpy`: Vectorized computations and array operations
 - `nltk`: Natural language preprocessing (normalization)
 - `datasets`: Hugging Face dataset integration
