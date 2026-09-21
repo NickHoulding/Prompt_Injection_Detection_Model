@@ -3,7 +3,7 @@ import numpy as np
 import argparse
 import time
 import os
-from typing import Union, Dict, Tuple, List
+from dataclasses import dataclass
 
 from common import (
     MODELS_PATH,
@@ -12,6 +12,16 @@ from common import (
     report_metrics,
     resolve_model_path,
 )
+
+@dataclass
+class EvaluationResult:
+    """Evaluation metrics and predictions returned by ``LogisticRegressionModel.evaluate``."""
+    model_name: str
+    recall: float
+    f1: float
+    precision: float
+    predictions: np.ndarray
+    num_total: int
 
 # External function to load a Logistic Regression model
 def load_model(file_path: str) -> 'LogisticRegressionModel':
@@ -43,7 +53,7 @@ class LogisticRegressionModel:
         weights (np.ndarray): Weights of the model.
         bias (float): Bias term of the model.
         is_trained (bool): Flag indicating if the model is trained.
-        costs (List[float]): List of costs during training.
+        costs (list[float]): List of costs during training.
 
     Args:
         learning_rate (float): Learning rate for gradient descent.
@@ -52,7 +62,7 @@ class LogisticRegressionModel:
 
     Methods:
         _initialize_with_zeros(dim: int): Initializes weights and bias to zeros.
-        _sigmoid(z: Union[float, np.ndarray]): Computes the sigmoid of z.
+        _sigmoid(z: float | np.ndarray): Computes the sigmoid of z.
         _propagate(X: np.ndarray, Y: np.ndarray): Computes cost and gradients.
         _optimize(X: np.ndarray, Y: np.ndarray, print_cost: bool):
             Optimizes weights and bias using gradient descent.
@@ -62,7 +72,7 @@ class LogisticRegressionModel:
         predict_proba(X: np.ndarray): Predicts probabilities for input data.
         evaluate(X_test: np.ndarray, Y_test: np.ndarray):
             Evaluates the model on test data.
-        get_costs() -> List[float]: Returns the list of costs during training.
+        get_costs() -> list[float]: Returns the list of costs during training.
         save_model(file_path: str): Saves the model to a file.
 
     Raises:
@@ -77,10 +87,10 @@ class LogisticRegressionModel:
         self.name = name
         self.learning_rate = learning_rate
         self.num_iterations = num_iterations
-        self.weights = None
-        self.bias = None
+        self.weights: np.ndarray | None = None
+        self.bias: float | None = None
         self.is_trained = False
-        self.costs = []
+        self.costs: list[float] = []
     
     def _initialize_with_zeros(
             self, 
@@ -97,14 +107,14 @@ class LogisticRegressionModel:
         self.bias = 0.0
     
     def _sigmoid(
-            self, 
-            z: Union[float, np.ndarray]
+            self,
+            z: float | np.ndarray
         ) -> np.ndarray:
         """
         Computes the sigmoid of z.
 
         Args:
-            z (Union[float, np.ndarray]): A scalar or numpy array of any size.
+            z (float | np.ndarray): A scalar or numpy array of any size.
 
         Returns:
             s (np.ndarray): The sigmoid of z.
@@ -116,7 +126,7 @@ class LogisticRegressionModel:
             self, 
             X: np.ndarray, 
             Y: np.ndarray
-        ) -> Tuple[Dict[str, np.ndarray], float]:
+        ) -> tuple[dict[str, np.ndarray], float]:
         """
         Implement the cost function and its gradient for propagation.
 
@@ -252,10 +262,10 @@ class LogisticRegressionModel:
         return self._sigmoid(np.dot(weights.T, X) + self.bias)
     
     def evaluate(
-            self, 
-            X_test: np.ndarray, 
+            self,
+            X_test: np.ndarray,
             Y_test: np.ndarray
-        ) -> Dict[str, Union[str, float, np.ndarray]]:
+        ) -> EvaluationResult:
         """
         Evaluate the model on test data.
 
@@ -280,16 +290,16 @@ class LogisticRegressionModel:
         recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
 
-        return {
-            "model_name": self.name,
-            "recall": recall,
-            "f1": f1_score(recall, precision),
-            "precision": precision,
-            "predictions": Y_prediction,
-            "num_total": Y_test.shape[1]
-        }
+        return EvaluationResult(
+            model_name=self.name,
+            recall=recall,
+            f1=f1_score(recall, precision),
+            precision=precision,
+            predictions=Y_prediction,
+            num_total=Y_test.shape[1]
+        )
     
-    def get_costs(self) -> List[float]:
+    def get_costs(self) -> list[float]:
         """
         Returns the list of costs during training.
         
@@ -391,9 +401,9 @@ def train(args: argparse.Namespace) -> None:
         )
         report_metrics(
             "Train",
-            train_evaluation['recall'],
-            train_evaluation['f1'],
-            train_evaluation['precision']
+            train_evaluation.recall,
+            train_evaluation.f1,
+            train_evaluation.precision
         )
 
     evaluation = model.evaluate(
@@ -402,9 +412,9 @@ def train(args: argparse.Namespace) -> None:
     )
     report_metrics(
         "Test",
-        evaluation['recall'],
-        evaluation['f1'],
-        evaluation['precision']
+        evaluation.recall,
+        evaluation.f1,
+        evaluation.precision
     )
 
     if args.save_model and not args.load_model:

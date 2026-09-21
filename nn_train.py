@@ -84,8 +84,8 @@ def train(args: argparse.Namespace) -> None:
 
     # Model Architecture Definition
     model = tf.keras.Sequential([
-        tfl.Dense(
-            128, 
+        tfl.Dense(  # type: ignore[call-arg]  # types-tensorflow stub omits the legacy input_shape kwarg
+            128,
             activation='relu',
             kernel_regularizer=regularizers.l2(0.02),
             input_shape=(X_train.shape[1],)

@@ -20,7 +20,6 @@ from sklearn.model_selection import train_test_split
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 from datasets import load_dataset
-from typing import List, Tuple
 
 class DataPipeline:
     """
@@ -83,7 +82,7 @@ class DataPipeline:
     def download_dataset(
             self, 
             dataset_name="jayavibhav/prompt-injection-safety"
-        ) -> Tuple[List[str], List[int]]:
+        ) -> tuple[list[str], list[int]]:
         """
         Download the dataset from HuggingFace.
         
@@ -121,7 +120,7 @@ class DataPipeline:
             self, 
             X: list, 
             y: list
-        ) -> Tuple[List[str], List[str], List[int], List[int]]:
+        ) -> tuple[list[str], list[str], list[int], list[int]]:
         """
         Perform stratified train/test split to maintain label distribution.
         
@@ -204,7 +203,7 @@ class DataPipeline:
             self, 
             X_train: list, 
             X_test: list
-        ) -> Tuple[List[str], List[str], List[int], List[int]]:
+        ) -> tuple[list[str], list[str], list[int], list[int]]:
         """
         Normalize text data for both train and test sets.
         
@@ -276,7 +275,7 @@ class DataPipeline:
             X_test: list,
             y_train: list,
             y_test: list
-        ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
         Generate embeddings for text data using Ollama.
         

@@ -3,6 +3,7 @@ import numpy as np
 import argparse
 import ollama
 import os
+from typing import Any
 from common import MODELS_PATH, resolve_model_path
 from lr_train import load_model
 
@@ -36,6 +37,8 @@ def main() -> None:
     if model_type not in ['nn', 'lr']:
         print("[✗] Invalid model type specified. Use 'nn' for neural network or 'lr' for logistic regression.")
         return
+
+    model: Any
 
     try:
         if model_type == 'lr':

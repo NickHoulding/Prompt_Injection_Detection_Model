@@ -8,14 +8,13 @@ embedding loading plus evaluation-metric computation and reporting (used by
 
 import numpy as np
 import os
-from typing import Optional, Tuple
 
 # Globals
 EMBEDDINGS_PATH = os.path.join(os.path.dirname(__file__), 'embeddings')
 MODELS_PATH = os.path.join(os.path.dirname(__file__), 'models')
 
 
-def load_embeddings() -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+def load_embeddings() -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Load the processed embedding arrays from ``EMBEDDINGS_PATH``.
 
@@ -36,8 +35,8 @@ def load_embeddings() -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
 
 def resolve_model_path(
         file_path: str,
-        expected_suffix: Optional[str] = None
-    ) -> Optional[str]:
+        expected_suffix: str | None = None
+    ) -> str | None:
     """
     Validate that a model file exists (and has the expected type) before loading.
 
