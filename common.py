@@ -1,8 +1,9 @@
 """Shared helpers used by the training scripts and the demo.
 
-Holds the stateless pieces that would otherwise be duplicated across
-``lr_train.py``, ``nn_train.py`` and ``demo.py``: embedding loading, model-path
-resolution, and evaluation-metric computation and reporting.
+Holds the stateless pieces that would otherwise be duplicated: model-path
+resolution (used by ``lr_train.py``, ``nn_train.py`` and ``demo.py``), and
+embedding loading plus evaluation-metric computation and reporting (used by
+``lr_train.py`` and ``nn_train.py``).
 """
 
 import numpy as np

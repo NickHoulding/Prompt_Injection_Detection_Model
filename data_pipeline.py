@@ -31,6 +31,7 @@ class DataPipeline:
         encoder (str): Ollama model to use for text embedding.
         test_size (float): Proportion of dataset for testing.
         random_state (int): Random seed for reproducibility.
+        lemmatizer (WordNetLemmatizer): NLTK lemmatizer used during text normalization.
 
     Methods:
         _download_nltk_data(): Downloads required NLTK datasets.
