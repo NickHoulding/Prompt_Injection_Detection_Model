@@ -1,16 +1,18 @@
-"""Shared helpers used by the training scripts and the demo.
+"""Shared helpers and path constants used across the project's scripts.
 
 Holds the stateless pieces that would otherwise be duplicated: model-path
-resolution (used by ``lr_train.py``, ``nn_train.py`` and ``demo.py``), and
+resolution (used by ``lr_train.py``, ``nn_train.py`` and ``demo.py``),
 embedding loading plus evaluation-metric computation and reporting (used by
-``lr_train.py`` and ``nn_train.py``).
+``lr_train.py`` and ``nn_train.py``), and the shared ``EMBEDDINGS_PATH`` /
+``MODELS_PATH`` constants (``EMBEDDINGS_PATH`` is also used by
+``data_pipeline.py`` as its embeddings output directory).
 """
 
 import numpy as np
 import os
 
 # Globals
-EMBEDDINGS_PATH = os.path.join(os.path.dirname(__file__), "embeddings")
+EMBEDDINGS_PATH = os.path.join(os.path.dirname(__file__), "data", "embeddings")
 MODELS_PATH = os.path.join(os.path.dirname(__file__), "models")
 
 

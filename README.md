@@ -9,14 +9,14 @@ This project contains a complete end-to-end implementation of a prompt injection
 - **Custom Logistic Regression**: Implemented from scratch with gradient descent optimization
 - **Neural Network**: Deep learning model built with TensorFlow/Keras
 - **Unified Demo Interface**: Single interactive demo supporting both models via command-line arguments
-- **Streamlined Data Pipeline**: Single script handling complete data workflow from download to embeddings
+- **Cached Data Pipeline**: Single script handling the complete data workflow from download to embeddings, caching each expensive stage so re-runs are fast
 - **Ollama Embeddings**: Using `nomic-embed-text` model for text embeddings
 - **Stratified Data Splitting**: Ensuring balanced 80/20 train/test split
 - **Text Normalization**: Comprehensive preprocessing pipeline
 
 ## Dataset
 
-The project uses the [prompt-injection-safety](https://huggingface.co/datasets/jayavibhav/prompt-injection-safety) dataset from Hugging Face. The pipeline's multi-class labels are collapsed to binary (safe vs. injection), and after preprocessing roughly 60k labeled examples remain, split 80/20 into 47,962 training and 11,994 test examples.
+The project uses the [prompt-injection-safety](https://huggingface.co/datasets/jayavibhav/prompt-injection-safety) dataset from Hugging Face. The pipeline's multi-class labels are collapsed to binary (safe vs. injection), and after preprocessing roughly 60k labeled examples remain, split 80/20 into 47,964 training and 11,992 test examples.
 
 ## Model Architectures
 
@@ -36,16 +36,19 @@ The project uses the [prompt-injection-safety](https://huggingface.co/datasets/j
 ## Project Structure
 
 ```
-├── embeddings/                 # Processed embeddings ready for training
-│   ├── X_train.npy             # Training feature embeddings
-│   ├── X_test.npy              # Test feature embeddings  
-│   ├── Y_train.npy             # Training labels
-│   └── Y_test.npy              # Test labels
+├── data/                        # Cached pipeline artifacts (gitignored)
+│   ├── raw_dataset.parquet      # Cached raw dataset downloaded from Hugging Face
+│   ├── processed_dataset.parquet # Cached normalized/lemmatized dataset
+│   └── embeddings/              # Final embeddings ready for training
+│       ├── X_train.npy          # Training feature embeddings
+│       ├── X_test.npy           # Test feature embeddings
+│       ├── Y_train.npy          # Training labels
+│       └── Y_test.npy           # Test labels
 ├── models/                     # Directory for trained model files
 │   ├── lr_model.pkl            # Trained logistic regression model 
 │   └── nn_model.keras          # Trained neural network model
 ├── common.py                   # Shared helpers: metrics reporting, embedding loading, model-path resolution
-├── data_pipeline.py            # Unified data processing pipeline
+├── data_pipeline.py            # Cached data processing pipeline
 ├── demo.py                     # Unified interactive demo interface
 ├── lr_train.py                 # Logistic regression model and training script
 ├── nn_train.py                 # Neural network model and training script
@@ -81,13 +84,20 @@ The project uses a streamlined data processing pipeline for easy setup and execu
 ```bash
 uv run data_pipeline.py
 ```
-- Downloads the prompt injection dataset from Hugging Face
-- Converts multi-class labels to binary (legitimate vs malicious)
+Each stage below is skipped if its cached output already exists, so re-running
+the script after a first successful run does no redundant work:
+- Downloads the prompt injection dataset from Hugging Face and caches it to
+  `data/raw_dataset.parquet` (or loads it from there if already cached).
+  Multi-class labels are converted to binary (legitimate vs malicious) at
+  this stage.
+- Applies comprehensive text preprocessing (normalization, lemmatization) and
+  caches the result to `data/processed_dataset.parquet`
 - Performs stratified train/test split (80/20)
-- Applies comprehensive text preprocessing (normalization, lemmatization)
-- Generates embeddings using Ollama's `nomic-embed-text` model, sent in fixed-size batches.
-- Saves processed embeddings as NumPy arrays to `embeddings/`
-- Requires Ollama to be installed and running with the embedding model (`ollama pull nomic-embed-text`)
+- Generates embeddings using Ollama's `nomic-embed-text` model, sent in fixed-size batches
+- Saves the final embeddings as NumPy arrays to `data/embeddings/`
+- If `data/embeddings/` already contains a valid, loadable set of embeddings,
+  the entire pipeline (download, preprocessing, and embedding) is skipped
+- Requires Ollama to be installed and running with the embedding model (`ollama pull nomic-embed-text`), unless embeddings are already cached
 
 ### Step 2: Model Training
 
@@ -102,7 +112,7 @@ uv run lr_train.py
 # Train and save with a custom model name
 uv run lr_train.py --save_model --model_name my_custom_lr_model
 ```
-- Loads processed embeddings from `embeddings/` directory
+- Loads processed embeddings from `data/embeddings/` directory
 - Instantiates a new custom logistic regression model object
 - Trains the model on the embedded training features
     - Hyperparameters: learning_rate=23.75, num_iterations=2500
@@ -120,7 +130,7 @@ uv run nn_train.py
 # Train and save with a custom model name
 uv run nn_train.py --save_model --model_name my_custom_nn_model
 ```
-- Loads processed embeddings from `embeddings/` directory
+- Loads processed embeddings from `data/embeddings/` directory
 - Creates and trains a deep neural network using TensorFlow (100 epochs, batch size 512)
 - Applies regularization techniques (L2, dropout, batch normalization)
 - Reports recall (primary), F1 (secondary), and precision for the injection class on both the train and test sets
@@ -194,16 +204,16 @@ uv run demo.py --model nn
 Both models are evaluated on the injection (positive) class using **recall as the
 primary metric** and **F1 as the secondary metric**, with precision reported for
 context. Metrics below are from the checked-in models (`models/lr_model.pkl`,
-`models/nn_model.keras`) evaluated on the 11,994-example test set; reproduce them
+`models/nn_model.keras`) evaluated on the 11,992-example test set; reproduce them
 with `uv run lr_train.py --load_model models/lr_model.pkl` and
 `uv run nn_train.py --load_model models/nn_model.keras`.
 
 | Model | Split | Recall | F1 | Precision |
 |-------|-------|--------|------|-----------|
-| Logistic Regression | Train | 0.9522 | 0.9524 | 0.9525 |
-| Logistic Regression | Test  | 0.9477 | 0.9509 | 0.9542 |
-| Neural Network      | Train | 0.9670 | 0.9623 | 0.9577 |
-| Neural Network      | Test  | 0.9616 | 0.9587 | 0.9559 |
+| Logistic Regression | Train | 0.9520 | 0.9526 | 0.9532 |
+| Logistic Regression | Test  | 0.9458 | 0.9503 | 0.9548 |
+| Neural Network      | Train | 0.9743 | 0.9603 | 0.9468 |
+| Neural Network      | Test  | 0.9691 | 0.9566 | 0.9444 |
 
 The neural network edges out logistic regression on every metric, and the small
 train/test gap for both models indicates the regularization is keeping overfitting in check.
@@ -235,8 +245,9 @@ Both models also provide:
 - **Flexible Training**: Command-line arguments for model saving, custom naming, and re-evaluating a saved model without retraining (`--load_model`)
 - **Consistent Evaluation**: Both scripts print recall / F1 / precision for the injection class in an identical format
 
-### Streamlined Data Processing
+### Cached Data Processing
 - **Unified Pipeline**: Single script handles complete data workflow from download to embeddings
+- **Stage Caching**: Raw dataset, preprocessed dataset, and final embeddings are each cached to `data/`, so re-running the pipeline skips any stage whose output already exists
 - **Modern Embeddings**: Ollama's `nomic-embed-text` model for high-quality representations
 - **Robust Preprocessing**: Unicode normalization, lemmatization, and special character handling
 - **Efficient Storage**: Direct embedding generation and storage for immediate model training
@@ -265,11 +276,12 @@ Both models also provide:
 Key packages in this project and how they're used:
 - `ollama`: Text embedding generation
 - `tensorflow`: Deep learning framework for neural network implementation
-- `pandas`: NaN/missing-value checks during text normalization
+- `pandas`: Dataset caching (Parquet read/write) and NaN/missing-value checks during text normalization
 - `numpy`: Vectorized computations and array operations
 - `nltk`: Natural language preprocessing (normalization)
 - `datasets`: Hugging Face dataset integration
 - `scikit-learn`: Dataset stratification
+- `pyarrow`: Parquet read/write for caching the raw and preprocessed datasets
 
 Project management tools:
 - **UV**: Modern Python package manager (requires Python >=3.11)

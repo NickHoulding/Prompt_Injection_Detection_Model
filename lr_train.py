@@ -3,6 +3,7 @@ import numpy as np
 import argparse
 import time
 import os
+import sys
 from dataclasses import dataclass
 
 from common import (
@@ -398,4 +399,8 @@ if __name__ == "__main__":
     # models loadable from other scripts such as demo.py.
     from lr_train import parse_args as _parse_args, train as _train
 
-    _train(_parse_args())
+    try:
+        _train(_parse_args())
+    except Exception as e:
+        print(f"[✗] {e}")
+        sys.exit(1)

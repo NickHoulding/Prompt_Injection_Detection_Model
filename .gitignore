@@ -1,8 +1,9 @@
 # Dirs
 __pycache__
 .venv/
-embeddings/
+data/
 .mypy_cache/
 
 # Files
 *.pyc
+.DS_Store

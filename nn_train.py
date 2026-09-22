@@ -3,6 +3,7 @@ import tensorflow as tf
 import argparse
 import time
 import os
+import sys
 from tensorflow.keras import regularizers
 
 from common import (
@@ -135,4 +136,9 @@ def train(args: argparse.Namespace) -> None:
 # Entry point
 if __name__ == "__main__":
     args = parse_args()
-    train(args)
+
+    try:
+        train(args)
+    except Exception as e:
+        print(f"[✗] {e}")
+        sys.exit(1)
